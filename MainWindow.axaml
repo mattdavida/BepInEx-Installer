@@ -1,0 +1,359 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:services="clr-namespace:BepInExInstaller.Services"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="700"
+        x:Class="BepInExInstaller.MainWindow"
+        Title="BepInEx Installer"
+        Icon="/Assets/icon.ico"
+        Width="500"
+        Height="700"
+        MinWidth="460"
+        MinHeight="600"
+        Background="#18191C"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="44"
+        RenderOptions.BitmapInterpolationMode="HighQuality"
+        Opened="OnWindowOpened">
+    <Panel>
+        <Border IsHitTestVisible="False">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                    <GradientStop Color="#241C18" Offset="0" />
+                    <GradientStop Color="#18191C" Offset="0.48" />
+                    <GradientStop Color="#121214" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+        <Border IsHitTestVisible="False"
+                Height="280"
+                VerticalAlignment="Top"
+                Opacity="0.4">
+            <Border.Background>
+                <RadialGradientBrush Center="80%,0%"
+                                     GradientOrigin="80%,0%"
+                                     RadiusX="0.85"
+                                     RadiusY="1.05">
+                    <GradientStop Color="#3DF0B48A" Offset="0" />
+                    <GradientStop Color="#00F0B48A" Offset="1" />
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <Grid x:Name="ContentRoot"
+              RowDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto"
+              RowSpacing="10"
+              Margin="20,12,20,16">
+            <Grid x:Name="GamesSection"
+                  RowDefinitions="Auto,Auto,*"
+                  RowSpacing="10">
+                <StackPanel x:Name="GamesHeader"
+                            Spacing="8">
+                    <TextBlock x:Name="GamesHint"
+                               Text="Click a game below. If it isn't listed, add it manually."
+                               Foreground="{StaticResource AppMuted}"
+                               FontSize="13"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <TextBox x:Name="SearchTextBox"
+                         Grid.Row="1"
+                         PlaceholderText="Search a game..."
+                         TextChanged="OnSearchTextChanged" />
+
+                <Border Grid.Row="2"
+                        CornerRadius="10"
+                        Background="#10FFFFFF"
+                        BorderBrush="#14FFFFFF"
+                        BorderThickness="1"
+                        ClipToBounds="True"
+                        Padding="4">
+                    <Panel>
+                        <ListBox x:Name="GamesListBox"
+                                 SelectionMode="Single"
+                                 SelectionChanged="OnGamesSelectionChanged"
+                                 Tapped="OnGamesListTapped">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="services:DetectedGame">
+                                    <Border Classes="GameRow"
+                                            CornerRadius="8"
+                                            Padding="8,6"
+                                            ToolTip.Tip="{Binding InstallPath}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                            <Panel Grid.Column="0" Width="32" Height="32">
+                                                <Border CornerRadius="7"
+                                                        ClipToBounds="True"
+                                                        IsVisible="{Binding HasIcon}">
+                                                    <Image Source="{Binding Icon}"
+                                                           Width="32"
+                                                           Height="32"
+                                                           Stretch="UniformToFill" />
+                                                </Border>
+                                                <Border CornerRadius="7"
+                                                        Background="#24F0B48A"
+                                                        IsVisible="{Binding !HasIcon}">
+                                                    <TextBlock Text="{Binding Initial}"
+                                                               FontWeight="Bold"
+                                                               FontSize="14"
+                                                               Foreground="{StaticResource AppAccent}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                                </Border>
+                                            </Panel>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Name}"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="2"
+                                                        Orientation="Horizontal"
+                                                        Spacing="8"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding SupportBadge}"
+                                                           IsVisible="{Binding HasSupportBadge}"
+                                                           FontSize="12"
+                                                           Foreground="{StaticResource AppFaint}" />
+                                                <TextBlock Text="{Binding ChannelLabel}"
+                                                           IsVisible="{Binding HasChannelLabel}"
+                                                           FontSize="12"
+                                                           Foreground="{StaticResource AppAccent}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock x:Name="EmptyGamesText"
+                                   Text="No Unity games found in Steam. Add one manually using the button below."
+                                   Foreground="{StaticResource AppFaint}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Margin="24"
+                                   IsHitTestVisible="False" />
+                    </Panel>
+                </Border>
+            </Grid>
+
+            <Button x:Name="AddGameManuallyButton"
+                    Grid.Row="1"
+                    Classes="ghost"
+                    Content="Add Game Manually"
+                    HorizontalAlignment="Right"
+                    Click="OnAddGameManuallyClick" />
+
+            <StackPanel x:Name="ManualAddPanel"
+                        Grid.Row="2"
+                        Spacing="8"
+                        IsVisible="False">
+                <TextBlock Text="Game folder"
+                           Foreground="{StaticResource AppMuted}"
+                           FontSize="12" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBox x:Name="PathTextBox"
+                             Grid.Column="0"
+                             PlaceholderText="e.g. D:\SteamLibrary\steamapps\common\Valheim"
+                             KeyDown="OnPathTextBoxKeyDown"
+                             LostFocus="OnPathTextBoxLostFocus" />
+                    <Button x:Name="BrowseButton"
+                            Grid.Column="1"
+                            Classes="ghost"
+                            Content="Browse"
+                            Click="OnBrowseClick" />
+                </Grid>
+            </StackPanel>
+
+            <StackPanel x:Name="VersionSection"
+                        Grid.Row="3"
+                        Spacing="8">
+                <StackPanel x:Name="HandheldChrome"
+                            Spacing="8"
+                            IsVisible="False">
+                    <Button x:Name="HandheldBackButton"
+                            Classes="ghost"
+                            Content="Games"
+                            HorizontalAlignment="Left"
+                            Click="OnHandheldBackClick" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Panel Width="40" Height="40">
+                            <Border x:Name="SelectedGameIconBorder"
+                                    CornerRadius="8"
+                                    ClipToBounds="True"
+                                    IsVisible="False">
+                                <Image x:Name="SelectedGameIcon"
+                                       Width="40"
+                                       Height="40"
+                                       Stretch="UniformToFill" />
+                            </Border>
+                            <Border x:Name="SelectedGameInitialBorder"
+                                    CornerRadius="8"
+                                    Background="#24F0B48A">
+                                <TextBlock x:Name="SelectedGameInitial"
+                                           FontWeight="Bold"
+                                           FontSize="16"
+                                           Foreground="{StaticResource AppAccent}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Border>
+                        </Panel>
+                        <TextBlock x:Name="SelectedGameTitle"
+                                   Grid.Column="1"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="BepInEx version"
+                               Foreground="{StaticResource AppMuted}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                    <Border Classes="infoHint">
+                        <ToolTip.Tip>
+                            <TextBlock Text="Stable is BepInEx 5 (Unity Mono). Bleeding Edge is BepInEx 6 and is required for IL2CPP. Channel switches stay clean after one install with this app."
+                                       TextWrapping="Wrap"
+                                       MaxWidth="280" />
+                        </ToolTip.Tip>
+                        <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                    </Border>
+                </StackPanel>
+                <ComboBox x:Name="VersionComboBox" SelectedIndex="0">
+                    <ComboBoxItem Content="Stable" />
+                    <ComboBoxItem Content="Bleeding Edge" />
+                </ComboBox>
+                <StackPanel x:Name="ConsolePanel"
+                            Orientation="Horizontal"
+                            Spacing="6"
+                            IsVisible="False">
+                    <CheckBox x:Name="ConsoleCheckBox"
+                              Content="Show log console"
+                              IsCheckedChanged="OnConsoleCheckedChanged" />
+                    <Border Classes="infoHint">
+                        <ToolTip.Tip>
+                            <TextBlock Text="Writes Logging.Console Enabled in BepInEx/config/BepInEx.cfg. Creates that file if the game has not generated it yet. Launch the game after changing this."
+                                       TextWrapping="Wrap"
+                                       MaxWidth="280" />
+                        </ToolTip.Tip>
+                        <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel x:Name="InstalledModsPanel"
+                        Grid.Row="4"
+                        Spacing="8"
+                        IsVisible="False">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Installed plugins"
+                               Foreground="{StaticResource AppMuted}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                    <Border Classes="infoHint">
+                        <ToolTip.Tip>
+                            <TextBlock Text="Only zips installed with this app. Manual copies are not listed."
+                                       TextWrapping="Wrap"
+                                       MaxWidth="280" />
+                        </ToolTip.Tip>
+                        <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                    </Border>
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <ComboBox x:Name="InstalledModsCombo"
+                              Grid.Column="0"
+                              PlaceholderText="No plugins installed with this app"
+                              SelectionChanged="OnInstalledModsSelectionChanged">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="services:InstalledMod">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button x:Name="UninstallModButton"
+                            Grid.Column="1"
+                            Classes="ghost"
+                            Content="Uninstall Plugin"
+                            Click="OnUninstallModClick"
+                            IsEnabled="False" />
+                </Grid>
+            </StackPanel>
+
+            <WrapPanel x:Name="ActionButtons"
+                       Grid.Row="5"
+                       ItemSpacing="8"
+                       LineSpacing="8">
+                <Button x:Name="InstallButton"
+                        Content="Install BepInEx"
+                        Click="OnInstallClick"
+                        IsEnabled="False"
+                        Classes="accent" />
+                <Button x:Name="InstallModButton"
+                        Content="Install Plugin Zip"
+                        Click="OnInstallModClick"
+                        IsEnabled="False"
+                        Classes="ghost" />
+                <Button x:Name="UninstallButton"
+                        Content="Uninstall BepInEx"
+                        Click="OnUninstallClick"
+                        IsEnabled="False"
+                        Classes="ghost" />
+            </WrapPanel>
+
+            <StackPanel x:Name="StatusSection"
+                        Grid.Row="6"
+                        Spacing="8">
+                <TextBlock x:Name="StatusText"
+                           Text="Ready"
+                           Foreground="{StaticResource AppMuted}"
+                           FontSize="12"
+                           TextWrapping="Wrap" />
+                <ProgressBar x:Name="BusyBar"
+                             IsIndeterminate="True"
+                             IsVisible="False" />
+            </StackPanel>
+
+        </Grid>
+
+        <Border x:Name="UninstallConfirmOverlay"
+                IsVisible="False"
+                Background="#CC18191C">
+            <Border x:Name="ConfirmCard"
+                    Width="380"
+                    Padding="20"
+                    CornerRadius="10"
+                    Background="#221C1A"
+                    BorderBrush="#33FFFFFF"
+                    BorderThickness="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="14">
+                    <TextBlock x:Name="ConfirmTitle"
+                               Text="Uninstall BepInEx?"
+                               FontSize="16"
+                               FontWeight="SemiBold" />
+                    <TextBlock x:Name="ConfirmBody"
+                               Text="This deletes the BepInEx folder (including plugins and config) and Doorstop files such as winhttp.dll."
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource AppMuted}"
+                               FontSize="13" />
+                    <StackPanel x:Name="ConfirmButtons"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                HorizontalAlignment="Right">
+                        <Button Content="Cancel"
+                                Classes="ghost"
+                                Click="OnConfirmCancelClick" />
+                        <Button x:Name="ConfirmActionButton"
+                                Content="Uninstall"
+                                Classes="accent"
+                                Click="OnConfirmActionClick" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Panel>
+</Window>
