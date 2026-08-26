@@ -8,6 +8,10 @@ The UI matches [UE4SS Installer](https://github.com/mattdavida/ue4ss-Installer):
 
 Official Windows builds will be on [GitHub Releases](https://github.com/mattdavida/BepInExInstaller/releases).
 
+<p align="center">
+  <img src="Assets/BepInExInstaller-hero.png" alt="BepInEx Installer" width="520" />
+</p>
+
 ## Windows may warn you
 
 This app is not code-signed yet, so Windows SmartScreen often shows **Windows protected your PC** on first run. That is Windows treating an unknown exe as untrusted, not a verdict that the file is malware. Click **More info**, then **Run anyway**.
