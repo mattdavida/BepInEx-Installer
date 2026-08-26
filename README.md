@@ -9,7 +9,7 @@ The UI matches [UE4SS Installer](https://github.com/mattdavida/ue4ss-Installer):
 Official Windows builds will be on [GitHub Releases](https://github.com/mattdavida/BepInEx-Installer/releases).
 
 <p align="center">
-  <img src="Assets/BepInExInstaller-hero.png" alt="BepInEx Installer" width="520" />
+  <img src="Assets/b_installer_sequence.gif" alt="BepInEx Installer" width="760" />
 </p>
 
 ## Windows may warn you
