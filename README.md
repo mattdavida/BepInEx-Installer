@@ -6,7 +6,7 @@ This is a community installer. It is not affiliated with BepInEx or Unity.
 
 The UI matches [UE4SS Installer](https://github.com/mattdavida/ue4ss-Installer): same Avalonia layout, Steam scan, handheld mode, and manifest-tracked uninstall.
 
-Official Windows builds will be on [GitHub Releases](https://github.com/mattdavida/BepInExInstaller/releases).
+Official Windows builds will be on [GitHub Releases](https://github.com/mattdavida/BepInEx-Installer/releases).
 
 <p align="center">
   <img src="Assets/BepInExInstaller-hero.png" alt="BepInEx Installer" width="520" />
