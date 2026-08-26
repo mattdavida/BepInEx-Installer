@@ -91,4 +91,52 @@ public sealed class GitHubFetcherTests
         Assert.Throws<InvalidOperationException>(() =>
             GitHubFetcher.ReleaseTagUrl("BepInEx", "BepInEx", "v5/latest"));
     }
+
+    [Fact]
+    public void V_Rising_picks_the_community_zip_not_official_IL2CPP()
+    {
+        var assets = new List<GitHubAsset>
+        {
+            new() { Name = "BepInEx-Unity.IL2CPP-win-x64-6.0.0-pre.2.zip", UpdatedAt = DateTimeOffset.Parse("2026-02-09T00:00:00Z") },
+            new() { Name = "BepInEx_V-Rising_Experimental_Dev_1.733.2.zip", UpdatedAt = DateTimeOffset.Parse("2025-04-28T00:00:00Z") },
+            new() { Name = "source.zip", UpdatedAt = DateTimeOffset.Parse("2025-04-29T00:00:00Z") }
+        };
+
+        var picked = GitHubFetcher.SelectAsset(
+            assets,
+            BepInExChannel.BleedingEdge,
+            GameOs.Windows,
+            GameArch.X64,
+            ScriptingBackend.Il2Cpp,
+            BepInExAssetStyle.VRising);
+        Assert.Equal("BepInEx_V-Rising_Experimental_Dev_1.733.2.zip", picked?.Name);
+    }
+
+    [Fact]
+    public void V_Rising_style_ignores_official_zips()
+    {
+        var assets = new List<GitHubAsset>
+        {
+            new() { Name = "BepInEx-Unity.IL2CPP-win-x64-6.0.0-pre.2.zip", UpdatedAt = DateTimeOffset.Parse("2026-02-09T00:00:00Z") }
+        };
+
+        Assert.Null(GitHubFetcher.SelectAsset(
+            assets,
+            BepInExChannel.BleedingEdge,
+            GameOs.Windows,
+            GameArch.X64,
+            ScriptingBackend.Il2Cpp,
+            BepInExAssetStyle.VRising));
+    }
+
+    [Fact]
+    public void V_Rising_release_url_uses_the_community_tag()
+    {
+        Assert.Equal(
+            "https://api.github.com/repos/decaprime/VRising-Modding/releases/tags/1.733.2",
+            GitHubFetcher.ReleaseTagUrl(
+                BepInExReleaseSource.VRising.Owner,
+                BepInExReleaseSource.VRising.Repo,
+                BepInExReleaseSource.VRising.Tag));
+    }
 }

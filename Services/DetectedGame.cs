@@ -46,4 +46,8 @@ public sealed class DetectedGame
     }
 
     public bool HasSupportBadge => !string.IsNullOrEmpty(SupportBadge);
+
+    public string? PackBadge => KnownGameCatalog.Find(this)?.BadgeText;
+
+    public bool HasPackBadge => !string.IsNullOrEmpty(PackBadge);
 }

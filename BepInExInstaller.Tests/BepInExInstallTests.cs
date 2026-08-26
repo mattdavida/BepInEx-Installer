@@ -152,4 +152,29 @@ public sealed class BepInExInstallTests
         Assert.True(File.Exists(Path.Combine(game, "winhttp.dll")));
         Assert.Equal("CoolPlugin", installed.Name);
     }
+
+    [Fact]
+    public void V_Rising_pack_wrapper_and_dotnet_runtime_extract_then_uninstall()
+    {
+        using var temp = new TempDir();
+        var game = temp.Combine("Game");
+        Directory.CreateDirectory(game);
+
+        var zip = TestZip.Create(temp.Path,
+            ("BepInExPack_V_Rising/winhttp.dll", "proxy"),
+            ("BepInExPack_V_Rising/doorstop_config.ini", "cfg"),
+            ("BepInExPack_V_Rising/BepInEx/core/BepInEx.dll", "core"),
+            ("BepInExPack_V_Rising/dotnet/coreclr.dll", "runtime"));
+        ZipInstaller.InstallBepInEx(zip, game, BepInExChannel.BleedingEdge);
+
+        Assert.True(File.Exists(Path.Combine(game, "winhttp.dll")));
+        Assert.True(File.Exists(Path.Combine(game, "BepInEx", "core", "BepInEx.dll")));
+        Assert.True(File.Exists(Path.Combine(game, "dotnet", "coreclr.dll")));
+
+        ZipInstaller.UninstallBepInEx(game);
+
+        Assert.False(File.Exists(Path.Combine(game, "winhttp.dll")));
+        Assert.False(Directory.Exists(Path.Combine(game, "BepInEx")));
+        Assert.False(File.Exists(Path.Combine(game, "dotnet", "coreclr.dll")));
+    }
 }

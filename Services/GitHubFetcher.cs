@@ -4,10 +4,36 @@ using System.Text.RegularExpressions;
 
 namespace BepInExInstaller.Services;
 
+public enum BepInExAssetStyle
+{
+    Official,
+    VRising
+}
+
+/// <summary>
+/// GitHub release to pull a BepInEx zip from. V Rising uses the community pack
+/// the V Rising wiki / Thunderstore keep pointing at.
+/// </summary>
+public sealed record BepInExReleaseSource(
+    string Owner,
+    string Repo,
+    string Tag,
+    BepInExAssetStyle AssetStyle = BepInExAssetStyle.Official)
+{
+    public static BepInExReleaseSource VRising { get; } = new(
+        "decaprime",
+        "VRising-Modding",
+        "1.733.2",
+        BepInExAssetStyle.VRising);
+
+    public string Label => $"{Owner}/{Repo} {Tag}";
+}
+
 /// <summary>
 /// Downloads BepInEx from GitHub. Stable uses <c>/releases/latest</c> (BepInEx 5, Mono).
 /// Bleeding Edge walks recent releases (including prereleases) for a BepInEx 6 Unity zip
-/// that matches the game's backend, OS, and architecture.
+/// that matches the game's backend, OS, and architecture. V Rising uses
+/// <see cref="BepInExReleaseSource.VRising"/> instead.
 /// </summary>
 public static class GitHubFetcher
 {
@@ -27,8 +53,24 @@ public static class GitHubFetcher
         GameOs os,
         GameArch architecture,
         ScriptingBackend backend,
+        BepInExReleaseSource? source = null,
         CancellationToken cancellationToken = default)
     {
+        if (source is not null)
+        {
+            var release = await GetReleaseAsync(
+                ReleaseTagUrl(source.Owner, source.Repo, source.Tag),
+                cancellationToken);
+            var community = SelectAsset(release.Assets, channel, os, architecture, backend, source.AssetStyle);
+            if (community is null)
+            {
+                throw new InvalidOperationException(
+                    $"No matching zip was found on {source.Label}.");
+            }
+
+            return await DownloadAssetAsync(community, cancellationToken);
+        }
+
         if (channel == BepInExChannel.Stable && backend == ScriptingBackend.Il2Cpp)
         {
             throw new InvalidOperationException(
@@ -154,11 +196,14 @@ public static class GitHubFetcher
         BepInExChannel channel,
         GameOs os,
         GameArch architecture,
-        ScriptingBackend backend)
+        ScriptingBackend backend,
+        BepInExAssetStyle style = BepInExAssetStyle.Official)
     {
-        IEnumerable<GitHubAsset> matches = channel == BepInExChannel.BleedingEdge
-            ? assets.Where(a => IsUnity6Zip(a.Name, os, architecture, backend))
-            : assets.Where(a => IsStableZip(a.Name, os, architecture));
+        IEnumerable<GitHubAsset> matches = style == BepInExAssetStyle.VRising
+            ? assets.Where(a => IsVRisingZip(a.Name))
+            : channel == BepInExChannel.BleedingEdge
+                ? assets.Where(a => IsUnity6Zip(a.Name, os, architecture, backend))
+                : assets.Where(a => IsStableZip(a.Name, os, architecture));
 
         return matches
             .OrderByDescending(a => a.UpdatedAt)
@@ -203,6 +248,21 @@ public static class GitHubFetcher
 
         return file.Contains($".{backendToken}-", StringComparison.OrdinalIgnoreCase)
                && file.Contains(needle, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // e.g. BepInEx_V-Rising_Experimental_Dev_1.733.2.zip
+    internal static bool IsVRisingZip(string name)
+    {
+        var file = Path.GetFileName(name);
+        if (!file.StartsWith("BepInEx", StringComparison.OrdinalIgnoreCase)
+            || !file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return file.Contains("V-Rising", StringComparison.OrdinalIgnoreCase)
+               || file.Contains("V_Rising", StringComparison.OrdinalIgnoreCase)
+               || file.Contains("VRising", StringComparison.OrdinalIgnoreCase);
     }
 
     internal static string Describe(GameOs os, GameArch architecture, ScriptingBackend backend)
