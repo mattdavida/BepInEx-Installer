@@ -116,6 +116,10 @@
                                                            IsVisible="{Binding HasSupportBadge}"
                                                            FontSize="12"
                                                            Foreground="{StaticResource AppFaint}" />
+                                                <TextBlock Text="{Binding PackBadge}"
+                                                           IsVisible="{Binding HasPackBadge}"
+                                                           FontSize="12"
+                                                           Foreground="{StaticResource AppAccent}" />
                                                 <TextBlock Text="{Binding ChannelLabel}"
                                                            IsVisible="{Binding HasChannelLabel}"
                                                            FontSize="12"

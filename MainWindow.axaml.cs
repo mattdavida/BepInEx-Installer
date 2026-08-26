@@ -409,10 +409,14 @@ public partial class MainWindow : Window
         var channel = VersionComboBox.SelectedIndex == 1
             ? BepInExChannel.BleedingEdge
             : BepInExChannel.Stable;
+        var pack = FindGamePack(game, gamePath);
+        if (pack?.HasCustomSource == true)
+            channel = BepInExChannel.BleedingEdge;
 
         await RunBusyAsync("Downloading...", async () =>
         {
-            var zipPath = await GitHubFetcher.DownloadAsync(channel, info.Os, info.Architecture, info.Backend);
+            var zipPath = await GitHubFetcher.DownloadAsync(
+                channel, info.Os, info.Architecture, info.Backend, pack?.Source);
             try
             {
                 SetStatus("Extracting...");
@@ -425,6 +429,14 @@ public partial class MainWindow : Window
 
             MarkManagedChannel(gamePath, channel);
             RefreshConsoleToggle();
+            if (pack?.HasCustomSource == true)
+            {
+                var source = pack.Source?.Tag ?? pack.DisplayName;
+                var hint = string.IsNullOrWhiteSpace(pack.InstallHint) ? "" : $" {pack.InstallHint}";
+                SetStatus($"Installed Bleeding Edge from {source}.{hint}");
+                return;
+            }
+
             SetStatus($"Installed {FormatChannel(channel)} ({UnityGameDetector.FormatBackend(info.Backend)} {UnityGameDetector.FormatArch(info.Architecture == GameArch.Unknown ? GameArch.X64 : info.Architecture)}). {InstallTracker.Detect(gamePath).StatusText}");
         });
     }
@@ -733,12 +745,15 @@ public partial class MainWindow : Window
         }
 
         var game = SelectedGame();
+        var pack = FindGamePack(game, _gamePath);
         var detected = game is null
             ? null
             : $"{UnityGameDetector.FormatBackend(game.Backend)} {UnityGameDetector.FormatArch(game.Architecture == GameArch.Unknown ? GameArch.X64 : game.Architecture)}";
-        var hint = game?.Backend == ScriptingBackend.Il2Cpp
-            ? " IL2CPP needs Bleeding Edge (BepInEx 6)."
-            : "";
+        var hint = pack?.InstallHint is { Length: > 0 } installHint
+            ? $" {installHint}"
+            : game?.Backend == ScriptingBackend.Il2Cpp
+                ? " IL2CPP needs Bleeding Edge (BepInEx 6)."
+                : "";
         SetStatus($"{InstallTracker.Detect(_gamePath).StatusText}{(detected is null ? "" : $" Detected {detected}.")}{hint}");
     }
 
@@ -795,8 +810,16 @@ public partial class MainWindow : Window
         if (VersionComboBox is null)
             return;
 
-        VersionComboBox.SelectedIndex = backend == ScriptingBackend.Il2Cpp ? 1 : 0;
+        var pack = FindGamePack(SelectedGame(), _gamePath);
+        VersionComboBox.SelectedIndex = backend == ScriptingBackend.Il2Cpp || pack?.HasCustomSource == true
+            ? 1
+            : 0;
     }
+
+    private static KnownGamePack? FindGamePack(DetectedGame? game, string? gamePath)
+        => game is not null
+            ? KnownGameCatalog.Find(game)
+            : KnownGameCatalog.Find(null, null, null, gamePath);
 
     private DetectedGame? SelectedGame()
         => _gamePath is null
