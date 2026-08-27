@@ -170,6 +170,24 @@ public static class GitHubFetcher
         return destination;
     }
 
+    public static async Task<string> DownloadConfigurationManagerAsync(
+        bool il2cpp,
+        CancellationToken cancellationToken = default)
+    {
+        var release = await GetReleaseAsync(
+            "https://api.github.com/repos/BepInEx/BepInEx.ConfigurationManager/releases/latest",
+            cancellationToken);
+        var asset = SelectConfigurationManagerAsset(release.Assets, il2cpp);
+        if (asset is null)
+        {
+            throw new InvalidOperationException(il2cpp
+                ? "No IL2CPP Configuration Manager zip was found on GitHub."
+                : "No BepInEx 5 Configuration Manager zip was found on GitHub.");
+        }
+
+        return await DownloadAssetAsync(asset, cancellationToken);
+    }
+
     internal static void EnsureCompleteDownload(string path, long expectedSize)
     {
         if (expectedSize <= 0)
@@ -263,6 +281,29 @@ public static class GitHubFetcher
         return file.Contains("V-Rising", StringComparison.OrdinalIgnoreCase)
                || file.Contains("V_Rising", StringComparison.OrdinalIgnoreCase)
                || file.Contains("VRising", StringComparison.OrdinalIgnoreCase);
+    }
+
+    // e.g. BepInEx.ConfigurationManager_BepInEx5_v19.0.zip
+    //      BepInEx.ConfigurationManager_IL2CPP_v19.0.zip
+    internal static GitHubAsset? SelectConfigurationManagerAsset(IReadOnlyList<GitHubAsset> assets, bool il2cpp)
+        => assets
+            .Where(a => IsConfigurationManagerZip(a.Name, il2cpp))
+            .OrderByDescending(a => a.UpdatedAt)
+            .ThenByDescending(a => a.CreatedAt)
+            .FirstOrDefault();
+
+    internal static bool IsConfigurationManagerZip(string name, bool il2cpp)
+    {
+        var file = Path.GetFileName(name);
+        if (!file.StartsWith("BepInEx.ConfigurationManager_", StringComparison.OrdinalIgnoreCase)
+            || !file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var isIl2Cpp = file.Contains("_IL2CPP_", StringComparison.OrdinalIgnoreCase)
+                       || file.Contains("_IL2CPP.", StringComparison.OrdinalIgnoreCase);
+        return il2cpp == isIl2Cpp;
     }
 
     internal static string Describe(GameOs os, GameArch architecture, ScriptingBackend backend)

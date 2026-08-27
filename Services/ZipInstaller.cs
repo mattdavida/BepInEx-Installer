@@ -118,7 +118,7 @@ public static class ZipInstaller
     /// game root. Everything else extracts into <c>BepInEx/plugins</c>.
     /// Recorded in <c>.bepinex-installer-plugins.json</c> for per-plugin uninstall.
     /// </summary>
-    public static ModInstallResult InstallMod(string zipPath, string gamePath)
+    public static ModInstallResult InstallMod(string zipPath, string gamePath, string? displayName = null)
     {
         using var archive = ZipFile.OpenRead(zipPath);
         var layout = InspectModZip(archive);
@@ -135,7 +135,9 @@ public static class ZipInstaller
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var name = Path.GetFileNameWithoutExtension(zipPath);
+        var name = displayName;
+        if (string.IsNullOrWhiteSpace(name))
+            name = Path.GetFileNameWithoutExtension(zipPath);
         if (string.IsNullOrWhiteSpace(name))
             name = "Plugin";
 

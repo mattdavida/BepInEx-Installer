@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private bool _busy;
     private bool _applyingSelection;
     private bool _applyingConsole;
+    private bool _applyingConfigManager;
     private InstalledMod? _pendingModUninstall;
     private string? _pendingModZip;
     private bool _isHandheld;
@@ -103,6 +104,7 @@ public partial class MainWindow : Window
 
         ApplyInstalledModsVisibility();
         RefreshConsoleToggle();
+        RefreshConfigManagerToggle();
         if (showActions)
             RefreshSelectedGameTitle();
     }
@@ -429,6 +431,7 @@ public partial class MainWindow : Window
 
             MarkManagedChannel(gamePath, channel);
             RefreshConsoleToggle();
+            RefreshConfigManagerToggle();
             if (pack?.HasCustomSource == true)
             {
                 var source = pack.Source?.Tag ?? pack.DisplayName;
@@ -506,6 +509,7 @@ public partial class MainWindow : Window
             ClearManagedChannel(gamePath);
             RefreshInstalledMods();
             RefreshConsoleToggle();
+            RefreshConfigManagerToggle();
             SetStatus("BepInEx was removed from this game.");
         });
     }
@@ -716,6 +720,8 @@ public partial class MainWindow : Window
         InstalledModsCombo.IsEnabled = !_busy;
         if (ConsoleCheckBox is not null)
             ConsoleCheckBox.IsEnabled = canAct && ConsolePanel.IsVisible;
+        if (ConfigManagerCheckBox is not null)
+            ConfigManagerCheckBox.IsEnabled = canAct && ConfigManagerPanel is { IsVisible: true };
     }
 
     private void RefreshInstalledMods()
@@ -734,6 +740,7 @@ public partial class MainWindow : Window
         InstalledModsCombo.SelectedIndex = mods.Count > 0 ? 0 : -1;
         ApplyInstalledModsVisibility();
         RefreshConsoleToggle();
+        RefreshConfigManagerToggle();
     }
 
     private void ShowInstallStatus()
@@ -759,6 +766,8 @@ public partial class MainWindow : Window
 
     private void RefreshConsoleToggle()
     {
+        RefreshConfigManagerToggle();
+
         if (ConsolePanel is null || ConsoleCheckBox is null)
             return;
 
@@ -803,6 +812,123 @@ public partial class MainWindow : Window
             SetStatus($"Could not update BepInEx.cfg: {ex.Message}");
             RefreshConsoleToggle();
         }
+    }
+
+    private void RefreshConfigManagerToggle()
+    {
+        if (ConfigManagerPanel is null || ConfigManagerCheckBox is null)
+            return;
+
+        var showActions = _isHandheld && _handheldShowActions && _gamePath is not null;
+        if (_isHandheld && !showActions)
+        {
+            ConfigManagerPanel.IsVisible = false;
+            return;
+        }
+
+        var bepinex = _gamePath is not null
+                      && InstallTracker.Detect(_gamePath).Kind != InstallKind.None;
+        var backend = CurrentBackend();
+        var channel = CurrentInstalledChannel();
+        var offer = bepinex && ConfigurationManagerSupport.CanOffer(backend, channel);
+        ConfigManagerPanel.IsVisible = offer;
+        ConfigManagerCheckBox.IsEnabled = offer && !_busy;
+
+        if (ConfigManagerHint is not null)
+            ConfigManagerHint.Text = ConfigurationManagerSupport.Hint(backend);
+
+        _applyingConfigManager = true;
+        try
+        {
+            ConfigManagerCheckBox.IsChecked = offer
+                                              && _gamePath is not null
+                                              && ConfigurationManagerSupport.IsInstalled(_gamePath);
+        }
+        finally
+        {
+            _applyingConfigManager = false;
+        }
+    }
+
+    private async void OnConfigManagerCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_applyingConfigManager || _busy || _gamePath is null)
+            return;
+
+        var gamePath = _gamePath;
+        var want = ConfigManagerCheckBox.IsChecked == true;
+        var have = ConfigurationManagerSupport.IsInstalled(gamePath);
+        if (want == have)
+            return;
+
+        var il2cpp = CurrentBackend() == ScriptingBackend.Il2Cpp;
+
+        if (want)
+        {
+            await RunBusyAsync("Downloading Configuration Manager...", async () =>
+            {
+                var zipPath = await GitHubFetcher.DownloadConfigurationManagerAsync(il2cpp);
+                try
+                {
+                    SetStatus("Installing Configuration Manager...");
+                    await Task.Run(() => ZipInstaller.InstallMod(
+                        zipPath, gamePath, ConfigurationManagerSupport.DisplayName));
+                }
+                finally
+                {
+                    TryDelete(zipPath);
+                }
+
+                RefreshInstalledMods();
+                SetStatus(il2cpp
+                    ? "Installed Configuration Manager. Press F1 in-game. On some IL2CPP titles the menu never appears (Unity IMGUI is stripped)."
+                    : "Installed Configuration Manager. Press F1 in-game.");
+            });
+            RefreshConfigManagerToggle();
+            return;
+        }
+
+        var tracked = ConfigurationManagerSupport.FindTracked(gamePath);
+        if (tracked is null)
+        {
+            SetStatus("Configuration Manager is present but was not installed by this app. Remove BepInEx/plugins/ConfigurationManager by hand, or uninstall it from Installed plugins.");
+            RefreshConfigManagerToggle();
+            return;
+        }
+
+        await RunBusyAsync("Removing Configuration Manager...", async () =>
+        {
+            await Task.Run(() => ZipInstaller.UninstallMod(gamePath, tracked.Id));
+            RefreshInstalledMods();
+            SetStatus("Removed Configuration Manager.");
+        });
+        RefreshConfigManagerToggle();
+    }
+
+    private ScriptingBackend CurrentBackend()
+    {
+        var game = SelectedGame();
+        if (game is not null)
+            return game.Backend;
+
+        if (_gamePath is null)
+            return ScriptingBackend.Unknown;
+
+        return UnityGameDetector.Inspect(_gamePath)?.Backend ?? ScriptingBackend.Unknown;
+    }
+
+    private BepInExChannel CurrentInstalledChannel()
+    {
+        if (_gamePath is not null)
+        {
+            var channel = InstallTracker.Detect(_gamePath).Channel;
+            if (channel is not null)
+                return channel.Value;
+        }
+
+        return VersionComboBox.SelectedIndex == 1
+            ? BepInExChannel.BleedingEdge
+            : BepInExChannel.Stable;
     }
 
     private void ApplyRecommendedChannel(ScriptingBackend backend)

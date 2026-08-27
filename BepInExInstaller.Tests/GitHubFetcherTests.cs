@@ -139,4 +139,31 @@ public sealed class GitHubFetcherTests
                 BepInExReleaseSource.VRising.Repo,
                 BepInExReleaseSource.VRising.Tag));
     }
+
+    [Fact]
+    public void Configuration_manager_picks_BepInEx5_zip_for_Mono()
+    {
+        var assets = new List<GitHubAsset>
+        {
+            new() { Name = "BepInEx.ConfigurationManager_IL2CPP_v19.0.zip", UpdatedAt = DateTimeOffset.Parse("2026-06-29T00:00:00Z") },
+            new() { Name = "BepInEx.ConfigurationManager_BepInEx5_v19.0.zip", UpdatedAt = DateTimeOffset.Parse("2026-06-29T00:00:00Z") },
+            new() { Name = "source.zip", UpdatedAt = DateTimeOffset.Parse("2026-06-30T00:00:00Z") }
+        };
+
+        var picked = GitHubFetcher.SelectConfigurationManagerAsset(assets, il2cpp: false);
+        Assert.Equal("BepInEx.ConfigurationManager_BepInEx5_v19.0.zip", picked?.Name);
+    }
+
+    [Fact]
+    public void Configuration_manager_picks_IL2CPP_zip_and_ignores_BepInEx5()
+    {
+        var assets = new List<GitHubAsset>
+        {
+            new() { Name = "BepInEx.ConfigurationManager_BepInEx5_v19.0.zip", UpdatedAt = DateTimeOffset.Parse("2026-06-29T00:00:00Z") },
+            new() { Name = "BepInEx.ConfigurationManager_IL2CPP_v19.0.zip", UpdatedAt = DateTimeOffset.Parse("2026-06-28T00:00:00Z") }
+        };
+
+        var picked = GitHubFetcher.SelectConfigurationManagerAsset(assets, il2cpp: true);
+        Assert.Equal("BepInEx.ConfigurationManager_IL2CPP_v19.0.zip", picked?.Name);
+    }
 }

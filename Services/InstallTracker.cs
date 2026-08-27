@@ -103,7 +103,5 @@ public static class InstallTracker
 
     private static bool LooksInstalled(string gamePath)
         => Directory.Exists(Path.Combine(gamePath, "BepInEx"))
-           || File.Exists(Path.Combine(gamePath, "doorstop_config.ini"))
-           || File.Exists(Path.Combine(gamePath, "winhttp.dll"))
-           || File.Exists(Path.Combine(gamePath, "version.dll"));
+           || File.Exists(Path.Combine(gamePath, "doorstop_config.ini"));
 }
