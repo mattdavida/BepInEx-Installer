@@ -97,6 +97,21 @@ public sealed class BepInExInstallTests
     }
 
     [Fact]
+    public void Plugin_zip_can_use_a_display_name()
+    {
+        using var temp = new TempDir();
+        var game = temp.Combine("Game");
+        Directory.CreateDirectory(Path.Combine(game, "BepInEx", "core"));
+
+        var zip = TestZip.CreateNamed(temp.Path, "BepInEx.ConfigurationManager_BepInEx5_v19.0.zip",
+            ("ConfigurationManager/ConfigurationManager.dll", "plugin"));
+        ZipInstaller.InstallMod(zip, game, ConfigurationManagerSupport.DisplayName);
+
+        Assert.Equal(ConfigurationManagerSupport.DisplayName, Assert.Single(ModTracker.List(game)).Name);
+        Assert.True(ConfigurationManagerSupport.IsInstalled(game));
+    }
+
+    [Fact]
     public void Full_pack_zip_extracts_into_the_game_folder()
     {
         using var temp = new TempDir();

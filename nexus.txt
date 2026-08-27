@@ -1,0 +1,18 @@
+BepInEx Installer is a small desktop app for installing BepInEx and plugin zips into Unity games.
+
+Pick a Steam title, choose Stable or Bleeding Edge, and install. You can also drop in a plugin zip from here or elsewhere.
+
+It downloads the matching BepInEx zip for you, so you do not have to check GitHub or unpack files by hand. One exe.
+
+V Rising is pinned to the community pack (1.733.2). Stock GitHub Bleeding Edge cannot read that game's IL2CPP metadata. Other titles still get the newest zip for their channel.
+
+Tested on Windows. A Linux / Steam Deck build exists but has not been tested as thoroughly.
+
+Windows may show "Windows protected your PC" on first run because the exe is not code-signed yet. Click More info, then Run anyway. Antivirus may also flag winhttp.dll next to the game — BepInEx loads that way on purpose (UnityDoorstop).
+
+This is a community tool. It is not affiliated with BepInEx or Unity.
+
+Credits
+Source: https://github.com/mattdavida/BepInEx-Installer
+Releases: https://github.com/mattdavida/BepInEx-Installer/releases
+BepInEx: https://github.com/BepInEx/BepInEx

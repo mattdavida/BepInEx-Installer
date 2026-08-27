@@ -41,8 +41,7 @@ public sealed class InstallTrackerTests
         Assert.Equal(InstallKind.None, InstallTracker.Detect(none).Kind);
 
         var unmanaged = temp.Combine("unmanaged");
-        Directory.CreateDirectory(unmanaged);
-        File.WriteAllText(Path.Combine(unmanaged, "winhttp.dll"), "x");
+        Directory.CreateDirectory(Path.Combine(unmanaged, "BepInEx"));
         Assert.Equal(InstallKind.Unmanaged, InstallTracker.Detect(unmanaged).Kind);
 
         var managed = temp.Combine("managed");
@@ -64,6 +63,27 @@ public sealed class InstallTrackerTests
         using var temp = new TempDir();
         var leftover = temp.Combine("leftover");
         Directory.CreateDirectory(Path.Combine(leftover, "BepInEx", "plugins"));
+        Assert.Equal(InstallKind.Unmanaged, InstallTracker.Detect(leftover).Kind);
+    }
+
+    [Fact]
+    public void MelonLoader_proxy_dlls_are_not_treated_as_BepInEx()
+    {
+        using var temp = new TempDir();
+        var melon = temp.Combine("melon");
+        Directory.CreateDirectory(Path.Combine(melon, "MelonLoader"));
+        File.WriteAllText(Path.Combine(melon, "version.dll"), "proxy");
+        File.WriteAllText(Path.Combine(melon, "winhttp.dll"), "proxy");
+        Assert.Equal(InstallKind.None, InstallTracker.Detect(melon).Kind);
+    }
+
+    [Fact]
+    public void Doorstop_config_without_BepInEx_folder_still_counts_as_installed()
+    {
+        using var temp = new TempDir();
+        var leftover = temp.Combine("doorstop");
+        Directory.CreateDirectory(leftover);
+        File.WriteAllText(Path.Combine(leftover, "doorstop_config.ini"), "enabled=true");
         Assert.Equal(InstallKind.Unmanaged, InstallTracker.Detect(leftover).Kind);
     }
 }

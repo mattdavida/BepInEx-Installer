@@ -37,6 +37,8 @@ After one install with this app, switching channels cleans files this installer 
 
 **Show log console** writes `[Logging.Console] Enabled` in `BepInEx/config/BepInEx.cfg` so you do not have to edit that file after first launch. If the cfg is missing, the installer creates it. Launch the game after changing the toggle.
 
+**Configuration Manager (F1)** is optional. After BepInEx is installed, check the box to download [BepInEx.ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager) (BepInEx 5 zip for Stable Mono, IL2CPP zip for IL2CPP games). Uncheck to remove it. There is no official BepInEx 6 Mono build, so the box is hidden for Mono + Bleeding Edge. On some IL2CPP games the in-game menu never appears because Unity IMGUI is stripped.
+
 ## Install a plugin zip
 
 **Install Plugin Zip** looks at the archive (and one wrapper folder, if present):
