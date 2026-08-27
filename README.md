@@ -76,3 +76,9 @@ Standalone builds (no .NET install on the target machine). One file: `BepInExIns
 ```
 
 Optional `BEPINEX_INSTALLER_GITHUB_TOKEN` / `GITHUB_TOKEN` bypasses GitHub API rate limits. `BEPINEX_INSTALLER_LAYOUT=handheld|desktop` forces the Steam Deck layout.
+
+## Credits
+
+BepInEx: [BepInEx/BepInEx](https://github.com/BepInEx/BepInEx)
+
+Configuration Manager is [BepInEx.ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager) (LGPL-3.0). This installer only downloads it.

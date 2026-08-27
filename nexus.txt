@@ -16,3 +16,4 @@ Credits
 Source: https://github.com/mattdavida/BepInEx-Installer
 Releases: https://github.com/mattdavida/BepInEx-Installer/releases
 BepInEx: https://github.com/BepInEx/BepInEx
+Configuration Manager: https://github.com/BepInEx/BepInEx.ConfigurationManager (LGPL-3.0)
