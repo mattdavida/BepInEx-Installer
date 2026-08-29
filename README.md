@@ -29,7 +29,7 @@ Antivirus tools sometimes flag `winhttp.dll` next to a game exe. BepInEx loads t
 
 **Bleeding Edge** walks recent GitHub releases (including prereleases) for a BepInEx 6 pack named `BepInEx-Unity.{Mono|IL2CPP}-{os}-{arch}-*.zip`. IL2CPP games need this channel.
 
-V Rising is pinned to the [community pack](https://github.com/decaprime/VRising-Modding/releases/tag/1.733.2) (`1.733.2`). Stock GitHub Bleeding Edge cannot read that game's IL2CPP metadata.
+V Rising is pinned to the [community pack](https://github.com/decaprime/VRising-Modding/releases/tag/1.733.2) (`1.733.2`). Garden of Witches is pinned to [BepInEx 6.0.0-be.785](https://builds.bepinex.dev/projects/bepinex_be) (IL2CPP metadata v31). Stock GitHub Bleeding Edge (`pre.2`) cannot read those games' IL2CPP metadata.
 
 After one install with this app, switching channels cleans files this installer previously extracted. Same-channel updates keep `doorstop_config.ini` and `BepInEx/config/`. Manual BepInEx copies are not tracked, so leftovers can remain until you install once through the app.
 

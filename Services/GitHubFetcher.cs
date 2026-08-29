@@ -11,14 +11,16 @@ public enum BepInExAssetStyle
 }
 
 /// <summary>
-/// GitHub release to pull a BepInEx zip from. V Rising uses the community pack
-/// the V Rising wiki / Thunderstore keep pointing at.
+/// Zip to pull for a known game. Most games use a GitHub release
+/// (<see cref="Owner"/>/<see cref="Repo"/>@<see cref="Tag"/>). Garden of Witches
+/// uses a pinned BepInBuilds artifact via <see cref="DirectDownloadUrl"/>.
 /// </summary>
 public sealed record BepInExReleaseSource(
     string Owner,
     string Repo,
     string Tag,
-    BepInExAssetStyle AssetStyle = BepInExAssetStyle.Official)
+    BepInExAssetStyle AssetStyle = BepInExAssetStyle.Official,
+    string? DirectDownloadUrl = null)
 {
     public static BepInExReleaseSource VRising { get; } = new(
         "decaprime",
@@ -26,14 +28,27 @@ public sealed record BepInExReleaseSource(
         "1.733.2",
         BepInExAssetStyle.VRising);
 
-    public string Label => $"{Owner}/{Repo} {Tag}";
+    // Stock GitHub pre.2 dies with "We support 23-29, got 31". BE 785 reads
+    // metadata v31 and was verified against Garden of Witches (Unity 2022.3.62f3).
+    public static BepInExReleaseSource GardenOfWitches { get; } = new(
+        "BepInEx",
+        "BepInEx",
+        "6.0.0-be.785+6abdba4",
+        BepInExAssetStyle.Official,
+        "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip");
+
+    public bool HasDirectDownload => !string.IsNullOrWhiteSpace(DirectDownloadUrl);
+
+    public string Label => HasDirectDownload
+        ? $"builds.bepinex.dev {Tag}"
+        : $"{Owner}/{Repo} {Tag}";
 }
 
 /// <summary>
 /// Downloads BepInEx from GitHub. Stable uses <c>/releases/latest</c> (BepInEx 5, Mono).
 /// Bleeding Edge walks recent releases (including prereleases) for a BepInEx 6 Unity zip
-/// that matches the game's backend, OS, and architecture. V Rising uses
-/// <see cref="BepInExReleaseSource.VRising"/> instead.
+/// that matches the game's backend, OS, and architecture. Known games can pin a
+/// <see cref="BepInExReleaseSource"/> (GitHub tag or a BepInBuilds URL).
 /// </summary>
 public static class GitHubFetcher
 {
@@ -58,6 +73,9 @@ public static class GitHubFetcher
     {
         if (source is not null)
         {
+            if (source.HasDirectDownload)
+                return await DownloadDirectAsync(source, cancellationToken);
+
             var release = await GetReleaseAsync(
                 ReleaseTagUrl(source.Owner, source.Repo, source.Tag),
                 cancellationToken);
@@ -145,6 +163,27 @@ public static class GitHubFetcher
                ?? throw new InvalidOperationException("GitHub returned an empty release payload.");
     }
 
+    private static async Task<string> DownloadDirectAsync(
+        BepInExReleaseSource source,
+        CancellationToken cancellationToken)
+    {
+        var url = source.DirectDownloadUrl!;
+        EnsureTrustedDownloadUrl(url);
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            throw new InvalidOperationException("Pinned BepInEx download URL is invalid.");
+
+        var fileName = Path.GetFileName(Uri.UnescapeDataString(uri.AbsolutePath));
+        if (string.IsNullOrWhiteSpace(fileName)
+            || !fileName.StartsWith("BepInEx", StringComparison.OrdinalIgnoreCase)
+            || !fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Pinned BepInEx download URL is not a BepInEx zip.");
+        }
+
+        return await DownloadToTempAsync(url, fileName, expectedSize: 0, cancellationToken);
+    }
+
     private static async Task<string> DownloadAssetAsync(GitHubAsset asset, CancellationToken cancellationToken)
     {
         var fileName = Path.GetFileName(asset.Name);
@@ -154,19 +193,28 @@ public static class GitHubFetcher
             throw new InvalidOperationException("GitHub returned an unexpected asset name.");
         }
 
-        EnsureTrustedDownloadUrl(asset.BrowserDownloadUrl);
+        return await DownloadToTempAsync(asset.BrowserDownloadUrl, fileName, asset.Size, cancellationToken);
+    }
+
+    private static async Task<string> DownloadToTempAsync(
+        string url,
+        string fileName,
+        long expectedSize,
+        CancellationToken cancellationToken)
+    {
+        EnsureTrustedDownloadUrl(url);
 
         var downloadDir = Path.Combine(Path.GetTempPath(), "BepInExInstaller");
         Directory.CreateDirectory(downloadDir);
         var destination = Path.Combine(downloadDir, fileName);
 
-        await using (var remote = await Http.GetStreamAsync(asset.BrowserDownloadUrl, cancellationToken))
+        await using (var remote = await Http.GetStreamAsync(url, cancellationToken))
         await using (var file = File.Create(destination))
         {
             await remote.CopyToAsync(file, cancellationToken);
         }
 
-        EnsureCompleteDownload(destination, asset.Size);
+        EnsureCompleteDownload(destination, expectedSize);
         return destination;
     }
 
@@ -360,22 +408,39 @@ public static class GitHubFetcher
         response.EnsureSuccessStatusCode();
     }
 
-    private static void EnsureTrustedDownloadUrl(string url)
+    internal static void EnsureTrustedDownloadUrl(string url)
+    {
+        if (!IsTrustedDownloadUrl(url))
+            throw new InvalidOperationException("Download URL is not from a trusted BepInEx host.");
+    }
+
+    internal static bool IsTrustedDownloadUrl(string url)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
             || uri.Scheme != Uri.UriSchemeHttps)
         {
-            throw new InvalidOperationException("GitHub returned an unexpected download URL.");
+            return false;
         }
 
         var host = uri.Host;
-        var trusted = host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
-                      || host.EndsWith(".github.com", StringComparison.OrdinalIgnoreCase)
-                      || host.Equals("objects.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
-                      || host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase);
+        if (host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".github.com", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("objects.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
 
-        if (!trusted)
-            throw new InvalidOperationException("GitHub returned an unexpected download URL.");
+        if (!host.Equals("builds.bepinex.dev", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var parts = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 4
+               && parts[0].Equals("projects", StringComparison.OrdinalIgnoreCase)
+               && parts[1].Equals("bepinex_be", StringComparison.OrdinalIgnoreCase)
+               && parts[2].All(char.IsAsciiDigit)
+               && parts[3].StartsWith("BepInEx", StringComparison.OrdinalIgnoreCase)
+               && parts[3].EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
     }
 }
 

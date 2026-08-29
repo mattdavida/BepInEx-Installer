@@ -141,6 +141,32 @@ public sealed class GitHubFetcherTests
     }
 
     [Fact]
+    public void Garden_of_Witches_pins_the_BE_785_BepInBuilds_zip()
+    {
+        var source = BepInExReleaseSource.GardenOfWitches;
+        Assert.Equal("6.0.0-be.785+6abdba4", source.Tag);
+        Assert.True(source.HasDirectDownload);
+        Assert.Equal(
+            "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip",
+            source.DirectDownloadUrl);
+        Assert.True(GitHubFetcher.IsTrustedDownloadUrl(source.DirectDownloadUrl!));
+        Assert.Equal("builds.bepinex.dev 6.0.0-be.785+6abdba4", source.Label);
+    }
+
+    [Fact]
+    public void Trusted_url_accepts_GitHub_and_BepInBuilds_zips_only()
+    {
+        Assert.True(GitHubFetcher.IsTrustedDownloadUrl(
+            "https://github.com/BepInEx/BepInEx/releases/download/v6.0.0-pre.2/BepInEx-Unity.IL2CPP-win-x64-6.0.0-pre.2.zip"));
+        Assert.True(GitHubFetcher.IsTrustedDownloadUrl(
+            BepInExReleaseSource.GardenOfWitches.DirectDownloadUrl!));
+        Assert.False(GitHubFetcher.IsTrustedDownloadUrl("https://example.com/BepInEx.zip"));
+        Assert.False(GitHubFetcher.IsTrustedDownloadUrl(
+            "https://builds.bepinex.dev/projects/other/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip"));
+        Assert.False(GitHubFetcher.IsTrustedDownloadUrl("http://builds.bepinex.dev/projects/bepinex_be/785/BepInEx.zip"));
+    }
+
+    [Fact]
     public void Configuration_manager_picks_BepInEx5_zip_for_Mono()
     {
         var assets = new List<GitHubAsset>
