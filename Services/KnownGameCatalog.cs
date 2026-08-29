@@ -14,8 +14,9 @@ public sealed class KnownGamePack
 
 /// <summary>
 /// Game-specific BepInEx handling. Matched by Steam app id, then name, then folder.
-/// V Rising downloads the community pack from <see cref="BepInExReleaseSource.VRising"/>
-/// instead of stock GitHub Bleeding Edge (Cpp2IL in pre.2 cannot read metadata v31).
+/// V Rising downloads the community pack from <see cref="BepInExReleaseSource.VRising"/>.
+/// Garden of Witches pins BepInEx 6.0.0-be.785 from BepInBuilds
+/// (GitHub pre.2 cannot read IL2CPP metadata v31).
 /// </summary>
 public static class KnownGameCatalog
 {
@@ -32,6 +33,17 @@ public static class KnownGameCatalog
             Source = BepInExReleaseSource.VRising,
             BadgeText = "V Rising zip",
             InstallHint = "Uses the V Rising community pack (1.733.2), not stock Bleeding Edge."
+        },
+        // Unity 2022.3.62f3 / metadata v31. Verified with official BE 785.
+        new KnownGamePack
+        {
+            DisplayName = "Garden of Witches BepInEx",
+            SteamAppIds = ["2530470"],
+            NameContains = ["Garden of Witches"],
+            FolderNames = ["Garden of Witches"],
+            Source = BepInExReleaseSource.GardenOfWitches,
+            BadgeText = "BE 785",
+            InstallHint = "Uses BepInEx 6.0.0-be.785 from builds.bepinex.dev, not stock GitHub pre.2."
         }
     ];
 

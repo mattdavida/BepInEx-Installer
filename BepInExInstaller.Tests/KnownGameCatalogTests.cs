@@ -37,6 +37,33 @@ public sealed class KnownGameCatalogTests
     }
 
     [Fact]
+    public void Matches_Garden_of_Witches_by_app_id_and_pins_BE_785()
+    {
+        var pack = KnownGameCatalog.Find("2530470", "Something Else", null, null);
+        Assert.Equal("Garden of Witches BepInEx", pack?.DisplayName);
+        Assert.True(pack?.HasCustomSource);
+        Assert.Equal(BepInExReleaseSource.GardenOfWitches, pack?.Source);
+        Assert.Equal("BE 785", pack?.BadgeText);
+        Assert.Contains("6.0.0-be.785", pack!.InstallHint, StringComparison.OrdinalIgnoreCase);
+        Assert.True(pack.Source!.HasDirectDownload);
+    }
+
+    [Fact]
+    public void Matches_Garden_of_Witches_by_folder_name()
+    {
+        var pack = KnownGameCatalog.Find(
+            null, null, @"D:\SteamLibrary\steamapps\common\Garden of Witches", null);
+        Assert.Equal(BepInExReleaseSource.GardenOfWitches, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Garden_of_Witches_by_name()
+    {
+        var pack = KnownGameCatalog.Find(null, "Garden of Witches", null, null);
+        Assert.Equal(BepInExReleaseSource.GardenOfWitches, pack?.Source);
+    }
+
+    [Fact]
     public void Unknown_games_have_no_pack()
     {
         Assert.Null(KnownGameCatalog.Find("1", "Hollow Knight", @"D:\Steam\Hollow Knight", null));
