@@ -164,6 +164,10 @@ public sealed class GitHubFetcherTests
         Assert.False(GitHubFetcher.IsTrustedDownloadUrl(
             "https://builds.bepinex.dev/projects/other/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip"));
         Assert.False(GitHubFetcher.IsTrustedDownloadUrl("http://builds.bepinex.dev/projects/bepinex_be/785/BepInEx.zip"));
+        Assert.True(GitHubFetcher.IsTrustedDownloadUrl("https://unity.bepinex.dev/corlibs/2020.3.34.zip"));
+        Assert.True(GitHubFetcher.IsTrustedDownloadUrl("https://unity.bepinex.dev/libraries/2020.3.34.zip"));
+        Assert.False(GitHubFetcher.IsTrustedDownloadUrl("https://unity.bepinex.dev/other/2020.3.34.zip"));
+        Assert.False(GitHubFetcher.IsTrustedDownloadUrl("https://unity.bepinex.dev/corlibs/not-a-version.zip"));
     }
 
     [Fact]

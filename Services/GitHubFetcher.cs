@@ -184,6 +184,25 @@ public static class GitHubFetcher
         return await DownloadToTempAsync(url, fileName, expectedSize: 0, cancellationToken);
     }
 
+    public static async Task<string> DownloadTrustedZipAsync(
+        string url,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureTrustedDownloadUrl(url);
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            throw new InvalidOperationException("Download URL is invalid.");
+
+        var fileName = Path.GetFileName(Uri.UnescapeDataString(uri.AbsolutePath));
+        if (string.IsNullOrWhiteSpace(fileName)
+            || !fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Download URL is not a zip.");
+        }
+
+        return await DownloadToTempAsync(url, fileName, expectedSize: 0, cancellationToken);
+    }
+
     private static async Task<string> DownloadAssetAsync(GitHubAsset asset, CancellationToken cancellationToken)
     {
         var fileName = Path.GetFileName(asset.Name);
@@ -431,6 +450,9 @@ public static class GitHubFetcher
             return true;
         }
 
+        if (host.Equals("unity.bepinex.dev", StringComparison.OrdinalIgnoreCase))
+            return IsUnityBepInExLibrariesUrl(uri);
+
         if (!host.Equals("builds.bepinex.dev", StringComparison.OrdinalIgnoreCase))
             return false;
 
@@ -442,6 +464,27 @@ public static class GitHubFetcher
                && parts[3].StartsWith("BepInEx", StringComparison.OrdinalIgnoreCase)
                && parts[3].EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
     }
+
+    internal static bool IsUnityBepInExLibrariesUrl(Uri uri)
+    {
+        var parts = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
+            return false;
+
+        var kind = parts[0];
+        if (!kind.Equals("corlibs", StringComparison.OrdinalIgnoreCase)
+            && !kind.Equals("libraries", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return IsUnityVersionZip(parts[1]);
+    }
+
+    internal static bool IsUnityVersionZip(string fileName)
+        => fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+           && fileName.Count(c => c == '.') >= 3
+           && fileName[..^4].All(c => char.IsAsciiDigit(c) || c == '.');
 }
 
 internal sealed class GitHubRelease

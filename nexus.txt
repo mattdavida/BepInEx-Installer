@@ -4,7 +4,7 @@ Pick a Steam title, choose Stable or Bleeding Edge, and install. You can also dr
 
 It downloads the matching BepInEx zip for you, so you do not have to check GitHub or unpack files by hand. One exe.
 
-V Rising is pinned to the community pack (1.733.2). Stock GitHub Bleeding Edge cannot read that game's IL2CPP metadata. Other titles still get the newest zip for their channel.
+V Rising is pinned to the community pack (1.733.2). Stock GitHub Bleeding Edge cannot read that game's IL2CPP metadata. Skul stays on Stable and also gets unstripped Unity 2020.3.34 libraries so BepInEx can load (the game ships a stripped mscorlib). Other titles still get the newest zip for their channel.
 
 Tested on Windows. A Linux / Steam Deck build exists but has not been tested as thoroughly.
 

@@ -227,6 +227,47 @@ public static class ZipInstaller
         return Path.Combine(gamePath, "BepInEx", "plugins");
     }
 
+    /// <summary>
+    /// Extracts unstripped Unity corlibs / engine assemblies into
+    /// <paramref name="folder"/> next to the exe, points Doorstop at that folder,
+    /// and records the files on the installer manifest so uninstall removes them.
+    /// </summary>
+    public static void InstallUnstrippedLibraries(
+        IEnumerable<string> zipPaths,
+        string gamePath,
+        string folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder)
+            || folder.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+            || folder.Contains('/')
+            || folder.Contains('\\'))
+        {
+            throw new ArgumentException("Unstripped folder must be a single directory name.", nameof(folder));
+        }
+
+        var destination = Path.Combine(gamePath, folder);
+        Directory.CreateDirectory(destination);
+
+        var extracted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var zipPath in zipPaths)
+        {
+            using var archive = ZipFile.OpenRead(zipPath);
+            var strip = DetectSingleFolderPrefix(archive);
+            foreach (var relative in ExtractMapped(archive, destination, strip))
+                extracted.Add(NormalizeRelative($"{folder}/{relative}"));
+        }
+
+        DoorstopConfigPatcher.SetDllSearchPathOverride(gamePath, folder);
+
+        var manifest = InstallTracker.TryLoad(gamePath) ?? new InstallerManifest();
+        var files = new HashSet<string>(manifest.Files, StringComparer.OrdinalIgnoreCase);
+        foreach (var file in extracted)
+            files.Add(file);
+        files.Add(DoorstopConfigPatcher.FileName);
+        manifest.Files = files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+        InstallTracker.Save(gamePath, manifest);
+    }
+
     private static List<string> ExtractZip(string zipPath, string gamePath, bool preserveConfig)
     {
         var extracted = new List<string>();
@@ -436,6 +477,29 @@ public static class ZipInstaller
         var hasBepInEx = HasRootFolder(relatives, "BepInEx");
 
         return hasBepInEx && (hasDoorstop || HasRootFolder(relatives, "BepInEx"));
+    }
+
+    private static string? DetectSingleFolderPrefix(ZipArchive archive)
+    {
+        var relatives = archive.Entries
+            .Select(entry => NormalizeRelative(entry.FullName))
+            .Where(relative => relative.Length > 0 && !IsJunkPath(relative))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var tops = relatives
+            .Select(FirstSegment)
+            .Where(segment => segment.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (tops.Count != 1)
+            return null;
+
+        var prefix = tops[0];
+        return relatives.Any(path => path.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase))
+            ? prefix
+            : null;
     }
 
     private static string? DetectWrapperPrefix(IReadOnlyList<string> relatives)

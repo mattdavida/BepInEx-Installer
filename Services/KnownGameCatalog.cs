@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace BepInExInstaller.Services;
 
 public sealed class KnownGamePack
@@ -7,9 +9,42 @@ public sealed class KnownGamePack
     public string[] NameContains { get; init; } = [];
     public string[] FolderNames { get; init; } = [];
     public BepInExReleaseSource? Source { get; init; }
+    public UnstrippedLibraries? UnstrippedLibraries { get; init; }
     public bool HasCustomSource => Source is not null;
+    public bool NeedsUnstrippedLibraries => UnstrippedLibraries is not null;
     public string? BadgeText { get; init; }
     public string? InstallHint { get; init; }
+}
+
+/// <summary>
+/// Unstripped Mono + Unity assemblies from unity.bepinex.dev. Needed when the
+/// game's <c>mscorlib</c> is linker-stripped (BepInEx dies on <c>Module.GetPEKind</c>).
+/// </summary>
+public sealed record UnstrippedLibraries(
+    string CorlibsUrl,
+    string? EngineLibrariesUrl = null,
+    string Folder = "unstripped_corlib")
+{
+    private static readonly Regex UnityVersion = new(
+        @"^\d+(\.\d+)+$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    public static UnstrippedLibraries ForUnity(string version)
+    {
+        if (!UnityVersion.IsMatch(version))
+            throw new ArgumentException("Invalid Unity version.", nameof(version));
+
+        return new(
+            $"https://unity.bepinex.dev/corlibs/{version}.zip",
+            $"https://unity.bepinex.dev/libraries/{version}.zip");
+    }
+
+    public IEnumerable<string> DownloadUrls()
+    {
+        yield return CorlibsUrl;
+        if (!string.IsNullOrWhiteSpace(EngineLibrariesUrl))
+            yield return EngineLibrariesUrl;
+    }
 }
 
 /// <summary>
@@ -17,6 +52,7 @@ public sealed class KnownGamePack
 /// V Rising downloads the community pack from <see cref="BepInExReleaseSource.VRising"/>.
 /// Garden of Witches pins BepInEx 6.0.0-be.785 from BepInBuilds
 /// (GitHub pre.2 cannot read IL2CPP metadata v31).
+/// Skul stays on Stable and adds unstripped Unity 2020.3.34 corlibs.
 /// </summary>
 public static class KnownGameCatalog
 {
@@ -44,6 +80,18 @@ public static class KnownGameCatalog
             Source = BepInExReleaseSource.GardenOfWitches,
             BadgeText = "BE 785",
             InstallHint = "Uses BepInEx 6.0.0-be.785 from builds.bepinex.dev, not stock GitHub pre.2."
+        },
+        // Unity 2020.3.34 Mono. Stock BepInEx 5 dies with MissingMethodException
+        // Module.GetPEKind — mscorlib is linker-stripped (2.6 MB vs 4.0 MB unstripped).
+        new KnownGamePack
+        {
+            DisplayName = "Skul BepInEx",
+            SteamAppIds = ["1147560"],
+            NameContains = ["Skul"],
+            FolderNames = ["Skul"],
+            UnstrippedLibraries = UnstrippedLibraries.ForUnity("2020.3.34"),
+            BadgeText = "Unstripped libs",
+            InstallHint = "Adds unstripped Unity 2020.3.34 corlibs. Stock BepInEx cannot load this game's stripped mscorlib."
         }
     ];
 
