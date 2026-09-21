@@ -8,6 +8,7 @@ namespace BepInExInstaller.Services;
 /// Finds installed Steam games that look like Unity titles (<c>*_Data</c> + companion exe).
 /// Steam libraries are discovered the same way as MelonLoader.Installer / UE4SSInstaller:
 /// registry / well-known paths, then <c>libraryfolders.vdf</c> and <c>appmanifest_*.acf</c>.
+/// That search is visit-capped so large non-Unity installs do not stall the scan.
 /// </summary>
 public static class SteamScanner
 {

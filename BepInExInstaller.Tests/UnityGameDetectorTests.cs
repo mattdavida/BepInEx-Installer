@@ -69,6 +69,25 @@ public sealed class UnityGameDetectorTests
     }
 
     [Fact]
+    public void Gives_up_on_a_huge_non_unity_tree_instead_of_walking_everything()
+    {
+        using var temp = new TempDir();
+        for (var i = 0; i < UnityGameDetector.MaxDirectoriesToVisit + 50; i++)
+            Directory.CreateDirectory(temp.Combine("REEngineJunk", $"chunk_{i:D4}", "nested"));
+
+        Assert.Null(UnityGameDetector.FindGameRoot(temp.Path));
+    }
+
+    [Fact]
+    public void Does_not_descend_into_known_huge_folders()
+    {
+        using var temp = new TempDir();
+        CreateUnityLayout(temp.Combine("Content"), "Valheim", il2Cpp: false);
+
+        Assert.Null(UnityGameDetector.FindGameRoot(temp.Path));
+    }
+
+    [Fact]
     public void ReadElfArchitecture_detects_64_and_32_bit()
     {
         using var temp = new TempDir();
