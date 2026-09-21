@@ -47,8 +47,25 @@ public static class UnityGameDetector
         "MonoBleedingEdge",
         "Mono",
         ".git",
-        "dotnet"
+        "dotnet",
+        "Engine",
+        "Content",
+        "Intermediate",
+        "Saved",
+        "DerivedDataCache",
+        "Movies",
+        "Plugins",
+        "_CommonRedist",
+        "Redistributables",
+        "__Installer"
     };
+
+    /// <summary>
+    /// Stop walking a Steam install after this many folders. Unity titles have
+    /// <c>*_Data</c> at the install root; 30 is already past a realistic tree.
+    /// Unreal / RE Engine installs used to stall the scan.
+    /// </summary>
+    internal const int MaxDirectoriesToVisit = 30;
 
     public static string? FindGameRoot(string gameInstallPath)
     {
@@ -59,7 +76,10 @@ public static class UnityGameDetector
         if (TryInspect(startDir, out _))
             return startDir;
 
-        return FindUnityUnder(startDir, maxDepth: 6);
+        // Steam's game root is usually the Unity exe + *_Data folder. Walk a
+        // little in case of a wrapper folder, but cap visits so a huge
+        // non-Unity install cannot stall the Steam scan.
+        return FindUnityUnder(startDir, maxDepth: 6, MaxDirectoriesToVisit);
     }
 
     public static UnityGameInfo? Inspect(string gameInstallPath)
@@ -174,14 +194,18 @@ public static class UnityGameDetector
             _ => "win"
         };
 
-    private static string? FindUnityUnder(string directory, int maxDepth)
+    private static string? FindUnityUnder(string directory, int maxDepth, int visitLimit)
     {
         var pending = new Queue<(string Path, int Depth)>();
         pending.Enqueue((directory, 0));
+        var visited = 0;
 
         while (pending.Count > 0)
         {
             var (current, depth) = pending.Dequeue();
+            if (++visited > visitLimit)
+                return null;
+
             if (depth > 0 && TryInspect(current, out _))
                 return current;
 
