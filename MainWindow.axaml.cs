@@ -429,6 +429,26 @@ public partial class MainWindow : Window
                 TryDelete(zipPath);
             }
 
+            if (pack?.UnstrippedLibraries is { } libs)
+            {
+                SetStatus("Downloading unstripped Unity libraries...");
+                var libZips = new List<string>();
+                try
+                {
+                    foreach (var url in libs.DownloadUrls())
+                        libZips.Add(await GitHubFetcher.DownloadTrustedZipAsync(url));
+
+                    SetStatus("Installing unstripped Unity libraries...");
+                    await Task.Run(() =>
+                        ZipInstaller.InstallUnstrippedLibraries(libZips, gamePath, libs.Folder));
+                }
+                finally
+                {
+                    foreach (var libZip in libZips)
+                        TryDelete(libZip);
+                }
+            }
+
             MarkManagedChannel(gamePath, channel);
             RefreshConsoleToggle();
             RefreshConfigManagerToggle();
@@ -437,6 +457,13 @@ public partial class MainWindow : Window
                 var source = pack.Source?.Tag ?? pack.DisplayName;
                 var hint = string.IsNullOrWhiteSpace(pack.InstallHint) ? "" : $" {pack.InstallHint}";
                 SetStatus($"Installed Bleeding Edge from {source}.{hint}");
+                return;
+            }
+
+            if (pack?.NeedsUnstrippedLibraries == true)
+            {
+                var hint = string.IsNullOrWhiteSpace(pack.InstallHint) ? "" : $" {pack.InstallHint}";
+                SetStatus($"Installed {FormatChannel(channel)} with unstripped Unity libraries.{hint}");
                 return;
             }
 

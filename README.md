@@ -31,6 +31,8 @@ Antivirus tools sometimes flag `winhttp.dll` next to a game exe. BepInEx loads t
 
 V Rising is pinned to the [community pack](https://github.com/decaprime/VRising-Modding/releases/tag/1.733.2) (`1.733.2`). Garden of Witches is pinned to [BepInEx 6.0.0-be.785](https://builds.bepinex.dev/projects/bepinex_be) (IL2CPP metadata v31). Stock GitHub Bleeding Edge (`pre.2`) cannot read those games' IL2CPP metadata.
 
+Skul stays on **Stable**. The installer also downloads unstripped Unity **2020.3.34** corlibs and engine assemblies from [unity.bepinex.dev](https://unity.bepinex.dev/) into `unstripped_corlib` and sets Doorstop's `dll_search_path_override`. Without that, BepInEx 5 dies immediately (`MissingMethodException: Module.GetPEKind`) because the game's `mscorlib` is linker-stripped. The log console never appears in that state.
+
 After one install with this app, switching channels cleans files this installer previously extracted. Same-channel updates keep `doorstop_config.ini` and `BepInEx/config/`. Manual BepInEx copies are not tracked, so leftovers can remain until you install once through the app.
 
 **Uninstall BepInEx** deletes the `BepInEx` folder (plugins and config included) and Doorstop files such as `winhttp.dll`. Close the game first if a file is locked.

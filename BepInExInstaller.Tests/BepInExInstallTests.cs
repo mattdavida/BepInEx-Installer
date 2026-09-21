@@ -169,6 +169,40 @@ public sealed class BepInExInstallTests
     }
 
     [Fact]
+    public void Unstripped_libraries_extract_patch_doorstop_and_uninstall()
+    {
+        using var temp = new TempDir();
+        var game = temp.Combine("Game");
+        Directory.CreateDirectory(game);
+
+        var bepinex = TestZip.Create(temp.Path,
+            ("winhttp.dll", "proxy"),
+            ("doorstop_config.ini", "[UnityMono]\r\ndll_search_path_override =\r\n"),
+            ("BepInEx/core/BepInEx.dll", "core"));
+        ZipInstaller.InstallBepInEx(bepinex, game, BepInExChannel.Stable);
+
+        var corlibs = TestZip.Create(temp.Path, ("mscorlib.dll", "unstripped"));
+        var engine = TestZip.Create(temp.Path, ("2020.3.34/UnityEngine.CoreModule.dll", "engine"));
+        ZipInstaller.InstallUnstrippedLibraries([corlibs, engine], game, "unstripped_corlib");
+
+        Assert.Equal("unstripped", File.ReadAllText(Path.Combine(game, "unstripped_corlib", "mscorlib.dll")));
+        Assert.Equal(
+            "engine",
+            File.ReadAllText(Path.Combine(game, "unstripped_corlib", "UnityEngine.CoreModule.dll")));
+        Assert.Equal("unstripped_corlib", DoorstopConfigPatcher.ReadDllSearchPathOverride(game));
+
+        var manifest = InstallTracker.TryLoad(game);
+        Assert.Contains("unstripped_corlib/mscorlib.dll", manifest!.Files);
+        Assert.Contains("unstripped_corlib/UnityEngine.CoreModule.dll", manifest.Files);
+
+        ZipInstaller.UninstallBepInEx(game);
+
+        Assert.False(File.Exists(Path.Combine(game, "unstripped_corlib", "mscorlib.dll")));
+        Assert.False(Directory.Exists(Path.Combine(game, "unstripped_corlib")));
+        Assert.False(File.Exists(Path.Combine(game, "doorstop_config.ini")));
+    }
+
+    [Fact]
     public void V_Rising_pack_wrapper_and_dotnet_runtime_extract_then_uninstall()
     {
         using var temp = new TempDir();
