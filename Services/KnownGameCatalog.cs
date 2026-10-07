@@ -12,6 +12,8 @@ public sealed class KnownGamePack
     public UnstrippedLibraries? UnstrippedLibraries { get; init; }
     public bool HasCustomSource => Source is not null;
     public bool NeedsUnstrippedLibraries => UnstrippedLibraries is not null;
+    public bool IgnoreDoorstopDisableSwitch { get; init; }
+    public bool DisableUnityLogListening { get; init; }
     public string? BadgeText { get; init; }
     public string? InstallHint { get; init; }
 }
@@ -52,6 +54,10 @@ public sealed record UnstrippedLibraries(
 /// V Rising downloads the community pack from <see cref="BepInExReleaseSource.VRising"/>.
 /// Garden of Witches pins BepInEx 6.0.0-be.785 from BepInBuilds
 /// (GitHub pre.2 cannot read IL2CPP metadata v31).
+/// The Rogue Prince of Persia and Tainted Grail: The Fall of Avalon pin 6.0.0-be.788
+/// for the same metadata error on Unity 6.
+/// Prince of Persia: The Lost Crown stays on stock Bleeding Edge and enables Doorstop's
+/// ignore switch (the game sets DOORSTOP_DISABLE, so BepInEx never starts).
 /// Skul stays on Stable and adds unstripped Unity 2020.3.34 corlibs.
 /// </summary>
 public static class KnownGameCatalog
@@ -80,6 +86,44 @@ public static class KnownGameCatalog
             Source = BepInExReleaseSource.GardenOfWitches,
             BadgeText = "BE 785",
             InstallHint = "Uses BepInEx 6.0.0-be.785 from builds.bepinex.dev, not stock GitHub pre.2."
+        },
+        // Unity 6000.0.64f1 / metadata v31. GitHub pre.2 (be.697) reports
+        // "We support 23-29, got 31". No community pack; BE 788 reads v31.
+        new KnownGamePack
+        {
+            DisplayName = "The Rogue Prince of Persia BepInEx",
+            SteamAppIds = ["2717880"],
+            NameContains = ["The Rogue Prince of Persia", "Rogue Prince of Persia"],
+            FolderNames = ["The Rogue Prince Of Persia"],
+            Source = BepInExReleaseSource.RoguePrince,
+            BadgeText = "BE 788",
+            InstallHint = "Uses BepInEx 6.0.0-be.788 from builds.bepinex.dev, not stock GitHub pre.2."
+        },
+        // Unity 6000.0.x / metadata v31. GitHub pre.2 reports "We support 23-29, got 31".
+        // Same BE 788 pin as The Rogue Prince of Persia.
+        new KnownGamePack
+        {
+            DisplayName = "Tainted Grail Fall of Avalon BepInEx",
+            SteamAppIds = ["1466060"],
+            NameContains = ["Tainted Grail: The Fall of Avalon", "Fall of Avalon"],
+            FolderNames = ["Tainted Grail FoA"],
+            Source = BepInExReleaseSource.TaintedGrail,
+            BadgeText = "BE 788",
+            InstallHint = "Uses BepInEx 6.0.0-be.788 from builds.bepinex.dev, not stock GitHub pre.2."
+        },
+        // Unity IL2CPP, metadata v29. Stock pre.2 can read it, but the game sets
+        // DOORSTOP_DISABLE so the proxy exits before BepInEx logs anything.
+        // Lyall's PoPTLCFix pack sets ignore_disable_switch and turns Unity log listening off.
+        new KnownGamePack
+        {
+            DisplayName = "Prince of Persia The Lost Crown BepInEx",
+            SteamAppIds = ["2751000"],
+            NameContains = ["Prince of Persia The Lost Crown", "The Lost Crown"],
+            FolderNames = ["Prince of Persia The Lost Crown"],
+            IgnoreDoorstopDisableSwitch = true,
+            DisableUnityLogListening = true,
+            BadgeText = "Doorstop fix",
+            InstallHint = "Enables Doorstop's ignore switch and disables Unity log listening so BepInEx can start."
         },
         // Unity 2020.3.34 Mono. Stock BepInEx 5 dies with MissingMethodException
         // Module.GetPEKind — mscorlib is linker-stripped (2.6 MB vs 4.0 MB unstripped).

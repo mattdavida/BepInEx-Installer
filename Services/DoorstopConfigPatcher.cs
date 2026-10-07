@@ -12,6 +12,9 @@ public static class DoorstopConfigPatcher
     public const string Section = "UnityMono";
     public const string Key = "dll_search_path_override";
     public const string LegacyKey = "dllSearchPathOverride";
+    public const string GeneralSection = "General";
+    public const string IgnoreDisableSwitchKey = "ignore_disable_switch";
+    public const string LegacyIgnoreDisableSwitchKey = "ignoreDisableSwitch";
 
     public static string ConfigPath(string gamePath)
         => Path.Combine(gamePath, FileName);
@@ -65,6 +68,51 @@ public static class DoorstopConfigPatcher
             && !SetKeyInSection(lines, section, LegacyKey, folder))
         {
             lines.Insert(section + 1, $"{Key} = {folder}");
+        }
+
+        File.WriteAllLines(path, lines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    public static bool ReadIgnoreDisableSwitch(string gamePath)
+    {
+        var path = ConfigPath(gamePath);
+        if (!File.Exists(path))
+            return false;
+
+        try
+        {
+            var lines = File.ReadAllLines(path);
+            var section = IndexOfSection(lines, GeneralSection);
+            var start = section < 0 ? 0 : section;
+            var value = FindKeyValue(lines, start, IgnoreDisableSwitchKey)
+                        ?? FindKeyValue(lines, start, LegacyIgnoreDisableSwitchKey);
+            return value is not null && IsTrue(value);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static void SetIgnoreDisableSwitch(string gamePath, bool enabled)
+    {
+        var path = ConfigPath(gamePath);
+        if (!File.Exists(path))
+            throw new FileNotFoundException("doorstop_config.ini was not found. Install BepInEx first.", path);
+
+        var lines = File.ReadAllLines(path).ToList();
+        var section = IndexOfSection(lines, GeneralSection);
+        if (section < 0)
+        {
+            lines.Insert(0, $"[{GeneralSection}]");
+            section = 0;
+        }
+
+        var value = enabled ? "true" : "false";
+        if (!SetKeyInSection(lines, section, IgnoreDisableSwitchKey, value)
+            && !SetKeyInSection(lines, section, LegacyIgnoreDisableSwitchKey, value))
+        {
+            lines.Insert(section + 1, $"{IgnoreDisableSwitchKey} = {value}");
         }
 
         File.WriteAllLines(path, lines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
@@ -131,4 +179,9 @@ public static class DoorstopConfigPatcher
 
         return false;
     }
+
+    private static bool IsTrue(string value)
+        => value.Equals("true", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("1", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("yes", StringComparison.OrdinalIgnoreCase);
 }

@@ -449,6 +449,12 @@ public partial class MainWindow : Window
                 }
             }
 
+            if (pack?.IgnoreDoorstopDisableSwitch == true)
+                DoorstopConfigPatcher.SetIgnoreDisableSwitch(gamePath, true);
+
+            if (pack?.DisableUnityLogListening == true)
+                BepInExCfgPatcher.SetUnityLogListening(gamePath, false);
+
             MarkManagedChannel(gamePath, channel);
             RefreshConsoleToggle();
             RefreshConfigManagerToggle();
@@ -464,6 +470,13 @@ public partial class MainWindow : Window
             {
                 var hint = string.IsNullOrWhiteSpace(pack.InstallHint) ? "" : $" {pack.InstallHint}";
                 SetStatus($"Installed {FormatChannel(channel)} with unstripped Unity libraries.{hint}");
+                return;
+            }
+
+            if (pack?.IgnoreDoorstopDisableSwitch == true || pack?.DisableUnityLogListening == true)
+            {
+                var hint = string.IsNullOrWhiteSpace(pack.InstallHint) ? "" : $" {pack.InstallHint}";
+                SetStatus($"Installed {FormatChannel(channel)}.{hint}");
                 return;
             }
 

@@ -10,6 +10,8 @@ public static class BepInExCfgPatcher
 {
     public const string Section = "Logging.Console";
     public const string Key = "Enabled";
+    public const string UnityLogSection = "Logging";
+    public const string UnityLogKey = "UnityLogListening";
 
     public static string ConfigPath(string gamePath)
         => Path.Combine(gamePath, "BepInEx", "config", "BepInEx.cfg");
@@ -73,6 +75,60 @@ public static class BepInExCfgPatcher
         }
 
         SetKeyInSection(lines, section, Key, enabled ? "true" : "false");
+        Write(path, lines);
+    }
+
+    public static bool ReadUnityLogListening(string gamePath)
+    {
+        var path = ConfigPath(gamePath);
+        if (!File.Exists(path))
+            return true;
+
+        try
+        {
+            var lines = File.ReadAllLines(path);
+            var section = IndexOfSection(lines, UnityLogSection);
+            if (section < 0)
+                return true;
+
+            var value = FindKeyValue(lines, section, UnityLogKey);
+            return value is null || IsTrue(value);
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    public static void SetUnityLogListening(string gamePath, bool enabled)
+    {
+        var path = ConfigPath(gamePath);
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        List<string> lines;
+        if (File.Exists(path))
+            lines = File.ReadAllLines(path).ToList();
+        else
+            lines = [];
+
+        var section = IndexOfSection(lines, UnityLogSection);
+        if (section < 0)
+        {
+            if (lines.Count > 0 && !string.IsNullOrWhiteSpace(lines[^1]))
+                lines.Add("");
+            lines.Add($"[{UnityLogSection}]");
+            lines.Add("");
+            lines.Add("## Enables showing unity log messages in the BepInEx logging system.");
+            lines.Add("# Setting type: Boolean");
+            lines.Add("# Default value: true");
+            lines.Add($"{UnityLogKey} = {(enabled ? "true" : "false")}");
+            Write(path, lines);
+            return;
+        }
+
+        SetKeyInSection(lines, section, UnityLogKey, enabled ? "true" : "false");
         Write(path, lines);
     }
 

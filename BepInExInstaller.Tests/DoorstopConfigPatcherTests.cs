@@ -43,6 +43,51 @@ public sealed class DoorstopConfigPatcherTests
     }
 
     [Fact]
+    public void Enables_ignore_disable_switch_and_keeps_the_target_assembly()
+    {
+        using var temp = new TempDir();
+        var path = DoorstopConfigPatcher.ConfigPath(temp.Path);
+        Directory.CreateDirectory(temp.Path);
+        File.WriteAllText(path, """
+            [General]
+
+            # If enabled, DOORSTOP_DISABLE env var value is ignored
+            ignore_disable_switch = false
+
+            target_assembly = BepInEx\core\BepInEx.Unity.IL2CPP.dll
+
+            [Il2Cpp]
+            coreclr_path = dotnet\coreclr.dll
+            """);
+
+        Assert.False(DoorstopConfigPatcher.ReadIgnoreDisableSwitch(temp.Path));
+        DoorstopConfigPatcher.SetIgnoreDisableSwitch(temp.Path, true);
+
+        var text = File.ReadAllText(path);
+        Assert.Contains("ignore_disable_switch = true", text);
+        Assert.Contains("target_assembly = BepInEx\\core\\BepInEx.Unity.IL2CPP.dll", text);
+        Assert.Contains("coreclr_path = dotnet\\coreclr.dll", text);
+        Assert.True(DoorstopConfigPatcher.ReadIgnoreDisableSwitch(temp.Path));
+    }
+
+    [Fact]
+    public void Updates_legacy_ignore_disable_switch_key()
+    {
+        using var temp = new TempDir();
+        var path = DoorstopConfigPatcher.ConfigPath(temp.Path);
+        Directory.CreateDirectory(temp.Path);
+        File.WriteAllText(path, """
+            [General]
+            ignoreDisableSwitch = false
+            """);
+
+        DoorstopConfigPatcher.SetIgnoreDisableSwitch(temp.Path, true);
+
+        Assert.Contains("ignoreDisableSwitch = true", File.ReadAllText(path));
+        Assert.True(DoorstopConfigPatcher.ReadIgnoreDisableSwitch(temp.Path));
+    }
+
+    [Fact]
     public void Rejects_path_traversal()
     {
         using var temp = new TempDir();
