@@ -154,6 +154,20 @@ public sealed class GitHubFetcherTests
     }
 
     [Fact]
+    public void Rogue_Prince_pins_the_BE_788_BepInBuilds_zip()
+    {
+        var source = BepInExReleaseSource.RoguePrince;
+        Assert.Equal("6.0.0-be.788+5b766a3", source.Tag);
+        Assert.True(source.HasDirectDownload);
+        Assert.Equal(
+            "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip",
+            source.DirectDownloadUrl);
+        Assert.True(GitHubFetcher.IsTrustedDownloadUrl(source.DirectDownloadUrl!));
+        Assert.Equal("builds.bepinex.dev 6.0.0-be.788+5b766a3", source.Label);
+        Assert.Equal(source, BepInExReleaseSource.TaintedGrail);
+    }
+
+    [Fact]
     public void Trusted_url_accepts_GitHub_and_BepInBuilds_zips_only()
     {
         Assert.True(GitHubFetcher.IsTrustedDownloadUrl(

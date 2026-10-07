@@ -29,7 +29,9 @@ Antivirus tools sometimes flag `winhttp.dll` next to a game exe. BepInEx loads t
 
 **Bleeding Edge** walks recent GitHub releases (including prereleases) for a BepInEx 6 pack named `BepInEx-Unity.{Mono|IL2CPP}-{os}-{arch}-*.zip`. IL2CPP games need this channel.
 
-V Rising is pinned to the [community pack](https://github.com/decaprime/VRising-Modding/releases/tag/1.733.2) (`1.733.2`). Garden of Witches is pinned to [BepInEx 6.0.0-be.785](https://builds.bepinex.dev/projects/bepinex_be) (IL2CPP metadata v31). Stock GitHub Bleeding Edge (`pre.2`) cannot read those games' IL2CPP metadata.
+V Rising is pinned to the [community pack](https://github.com/decaprime/VRising-Modding/releases/tag/1.733.2) (`1.733.2`). Garden of Witches is pinned to [BepInEx 6.0.0-be.785](https://builds.bepinex.dev/projects/bepinex_be). The Rogue Prince of Persia and Tainted Grail: The Fall of Avalon are pinned to [6.0.0-be.788](https://builds.bepinex.dev/projects/bepinex_be) (all three are IL2CPP metadata v31; the last two are Unity 6). Stock GitHub Bleeding Edge (`pre.2`, build 697) cannot read those games' IL2CPP metadata.
+
+Prince of Persia: The Lost Crown stays on stock Bleeding Edge (metadata v29). The installer turns on Doorstop's `ignore_disable_switch` and sets `UnityLogListening` off. The game sets `DOORSTOP_DISABLE`, so without that switch BepInEx never starts, and Unity log listening crashes the launch once it does.
 
 Skul stays on **Stable**. The installer also downloads unstripped Unity **2020.3.34** corlibs and engine assemblies from [unity.bepinex.dev](https://unity.bepinex.dev/) into `unstripped_corlib` and sets Doorstop's `dll_search_path_override`. Without that, BepInEx 5 dies immediately (`MissingMethodException: Module.GetPEKind`) because the game's `mscorlib` is linker-stripped. The log console never appears in that state.
 

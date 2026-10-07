@@ -64,6 +64,96 @@ public sealed class KnownGameCatalogTests
     }
 
     [Fact]
+    public void Matches_Rogue_Prince_by_app_id_and_pins_BE_788()
+    {
+        var pack = KnownGameCatalog.Find("2717880", "Something Else", null, null);
+        Assert.Equal("The Rogue Prince of Persia BepInEx", pack?.DisplayName);
+        Assert.True(pack?.HasCustomSource);
+        Assert.Equal(BepInExReleaseSource.RoguePrince, pack?.Source);
+        Assert.Equal("BE 788", pack?.BadgeText);
+        Assert.Contains("6.0.0-be.788", pack!.InstallHint, StringComparison.OrdinalIgnoreCase);
+        Assert.True(pack.Source!.HasDirectDownload);
+    }
+
+    [Fact]
+    public void Matches_Rogue_Prince_by_folder_name()
+    {
+        var pack = KnownGameCatalog.Find(
+            null, null, @"D:\SteamLibrary\steamapps\common\The Rogue Prince Of Persia", null);
+        Assert.Equal(BepInExReleaseSource.RoguePrince, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Rogue_Prince_by_name()
+    {
+        var pack = KnownGameCatalog.Find(null, "The Rogue Prince of Persia", null, null);
+        Assert.Equal(BepInExReleaseSource.RoguePrince, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Tainted_Grail_by_app_id_and_pins_BE_788()
+    {
+        var pack = KnownGameCatalog.Find("1466060", "Something Else", null, null);
+        Assert.Equal("Tainted Grail Fall of Avalon BepInEx", pack?.DisplayName);
+        Assert.True(pack?.HasCustomSource);
+        Assert.Equal(BepInExReleaseSource.TaintedGrail, pack?.Source);
+        Assert.Equal(BepInExReleaseSource.RoguePrince, pack?.Source);
+        Assert.Equal("BE 788", pack?.BadgeText);
+        Assert.Contains("6.0.0-be.788", pack!.InstallHint, StringComparison.OrdinalIgnoreCase);
+        Assert.True(pack.Source!.HasDirectDownload);
+    }
+
+    [Fact]
+    public void Matches_Tainted_Grail_by_folder_name()
+    {
+        var pack = KnownGameCatalog.Find(
+            null, null, @"D:\SteamLibrary\steamapps\common\Tainted Grail FoA", null);
+        Assert.Equal(BepInExReleaseSource.TaintedGrail, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Tainted_Grail_by_name()
+    {
+        var pack = KnownGameCatalog.Find(null, "Tainted Grail: The Fall of Avalon", null, null);
+        Assert.Equal(BepInExReleaseSource.TaintedGrail, pack?.Source);
+    }
+
+    [Fact]
+    public void Tainted_Grail_name_does_not_match_Conquest()
+    {
+        Assert.Null(KnownGameCatalog.Find(null, "Tainted Grail: Conquest", null, null));
+    }
+
+    [Fact]
+    public void Matches_Lost_Crown_by_app_id_and_enables_the_doorstop_ignore_switch()
+    {
+        var pack = KnownGameCatalog.Find("2751000", "Something Else", null, null);
+        Assert.Equal("Prince of Persia The Lost Crown BepInEx", pack?.DisplayName);
+        Assert.False(pack?.HasCustomSource);
+        Assert.True(pack?.IgnoreDoorstopDisableSwitch);
+        Assert.True(pack?.DisableUnityLogListening);
+        Assert.Equal("Doorstop fix", pack?.BadgeText);
+        Assert.Contains("ignore switch", pack!.InstallHint, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Matches_Lost_Crown_by_folder_name()
+    {
+        var pack = KnownGameCatalog.Find(
+            null, null, @"D:\SteamLibrary\steamapps\common\Prince of Persia The Lost Crown", null);
+        Assert.True(pack?.IgnoreDoorstopDisableSwitch);
+        Assert.Null(pack?.Source);
+    }
+
+    [Fact]
+    public void Lost_Crown_name_does_not_match_Rogue_Prince()
+    {
+        var pack = KnownGameCatalog.Find(null, "The Rogue Prince of Persia", null, null);
+        Assert.Equal(BepInExReleaseSource.RoguePrince, pack?.Source);
+        Assert.False(pack?.IgnoreDoorstopDisableSwitch);
+    }
+
+    [Fact]
     public void Matches_Skul_by_app_id_and_uses_unstripped_2020_3_34_libs()
     {
         var pack = KnownGameCatalog.Find("1147560", "Something Else", null, null);

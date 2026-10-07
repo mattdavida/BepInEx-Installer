@@ -61,6 +61,52 @@ public sealed class BepInExCfgPatcherTests
     }
 
     [Fact]
+    public void Disables_unity_log_listening_without_changing_the_console_toggle()
+    {
+        using var temp = new TempDir();
+        var path = BepInExCfgPatcher.ConfigPath(temp.Path);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, """
+            [Logging.Console]
+
+            ## Enables showing a console for log output.
+            Enabled = true
+
+            [Logging]
+
+            ## Enables showing unity log messages in the BepInEx logging system.
+            # Default value: true
+            UnityLogListening = true
+            """);
+
+        BepInExCfgPatcher.SetUnityLogListening(temp.Path, false);
+
+        var text = File.ReadAllText(path);
+        Assert.Contains("UnityLogListening = false", text);
+        Assert.Contains("[Logging.Console]", text);
+        Assert.Contains("Enabled = true", text);
+        Assert.True(BepInExCfgPatcher.ReadConsoleEnabled(temp.Path));
+        Assert.False(BepInExCfgPatcher.ReadUnityLogListening(temp.Path));
+    }
+
+    [Fact]
+    public void Adds_unity_log_listening_when_only_the_console_section_exists()
+    {
+        using var temp = new TempDir();
+        Directory.CreateDirectory(temp.Path);
+        BepInExCfgPatcher.SetConsoleEnabled(temp.Path, true);
+
+        BepInExCfgPatcher.SetUnityLogListening(temp.Path, false);
+
+        var text = File.ReadAllText(BepInExCfgPatcher.ConfigPath(temp.Path));
+        Assert.Contains("[Logging.Console]", text);
+        Assert.Contains("[Logging]", text);
+        Assert.Contains("UnityLogListening = false", text);
+        Assert.True(BepInExCfgPatcher.ReadConsoleEnabled(temp.Path));
+        Assert.False(BepInExCfgPatcher.ReadUnityLogListening(temp.Path));
+    }
+
+    [Fact]
     public void Adds_section_when_cfg_exists_without_console()
     {
         using var temp = new TempDir();
