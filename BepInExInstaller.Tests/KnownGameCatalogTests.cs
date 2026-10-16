@@ -64,6 +64,50 @@ public sealed class KnownGameCatalogTests
     }
 
     [Fact]
+    public void Matches_Belmonts_Curse_by_app_id_and_pins_BE_785()
+    {
+        var pack = KnownGameCatalog.Find("4231820", "Something Else", null, null);
+        Assert.Equal("Castlevania Belmont's Curse BepInEx", pack?.DisplayName);
+        Assert.True(pack?.HasCustomSource);
+        Assert.Equal(BepInExReleaseSource.BelmontsCurse, pack?.Source);
+        Assert.Equal(BepInExReleaseSource.GardenOfWitches, pack?.Source);
+        Assert.NotEqual(BepInExReleaseSource.RoguePrince, pack?.Source);
+        Assert.Equal("BE 785", pack?.BadgeText);
+        Assert.Contains("6.0.0-be.785", pack!.InstallHint, StringComparison.OrdinalIgnoreCase);
+        Assert.True(pack.Source!.HasDirectDownload);
+    }
+
+    [Fact]
+    public void Matches_Belmonts_Curse_demo_by_app_id()
+    {
+        var pack = KnownGameCatalog.Find("5000760", "Demo", null, null);
+        Assert.Equal(BepInExReleaseSource.BelmontsCurse, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Belmonts_Curse_by_folder_name()
+    {
+        var pack = KnownGameCatalog.Find(
+            null, null, @"D:\SteamLibrary\steamapps\common\Castlevania Belmont's Curse", null);
+        Assert.Equal(BepInExReleaseSource.BelmontsCurse, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Belmonts_Curse_demo_by_folder_name()
+    {
+        var pack = KnownGameCatalog.Find(
+            null, null, @"D:\SteamLibrary\steamapps\common\Castlevania Belmont's Curse Demo", null);
+        Assert.Equal(BepInExReleaseSource.BelmontsCurse, pack?.Source);
+    }
+
+    [Fact]
+    public void Matches_Belmonts_Curse_by_name()
+    {
+        var pack = KnownGameCatalog.Find(null, "Castlevania: Belmont's Curse", null, null);
+        Assert.Equal(BepInExReleaseSource.BelmontsCurse, pack?.Source);
+    }
+
+    [Fact]
     public void Matches_Rogue_Prince_by_app_id_and_pins_BE_788()
     {
         var pack = KnownGameCatalog.Find("2717880", "Something Else", null, null);

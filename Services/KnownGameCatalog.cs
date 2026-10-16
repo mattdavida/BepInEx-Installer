@@ -52,8 +52,8 @@ public sealed record UnstrippedLibraries(
 /// <summary>
 /// Game-specific BepInEx handling. Matched by Steam app id, then name, then folder.
 /// V Rising downloads the community pack from <see cref="BepInExReleaseSource.VRising"/>.
-/// Garden of Witches pins BepInEx 6.0.0-be.785 from BepInBuilds
-/// (GitHub pre.2 cannot read IL2CPP metadata v31).
+/// Garden of Witches and Castlevania: Belmont's Curse pin BepInEx 6.0.0-be.785
+/// from BepInBuilds (GitHub pre.2 cannot read IL2CPP metadata v31 on Unity 2022.3).
 /// The Rogue Prince of Persia and Tainted Grail: The Fall of Avalon pin 6.0.0-be.788
 /// for the same metadata error on Unity 6.
 /// Prince of Persia: The Lost Crown stays on stock Bleeding Edge and enables Doorstop's
@@ -84,6 +84,18 @@ public static class KnownGameCatalog
             NameContains = ["Garden of Witches"],
             FolderNames = ["Garden of Witches"],
             Source = BepInExReleaseSource.GardenOfWitches,
+            BadgeText = "BE 785",
+            InstallHint = "Uses BepInEx 6.0.0-be.785 from builds.bepinex.dev, not stock GitHub pre.2."
+        },
+        // Unity 2022.3.62f2 / metadata v31. Same failure and pin as Garden of Witches.
+        // Not the Unity 6 BE 788 pin used by The Rogue Prince of Persia.
+        new KnownGamePack
+        {
+            DisplayName = "Castlevania Belmont's Curse BepInEx",
+            SteamAppIds = ["4231820", "5000760"],
+            NameContains = ["Castlevania: Belmont's Curse", "Castlevania Belmont's Curse"],
+            FolderNames = ["Castlevania Belmont's Curse", "Castlevania Belmont's Curse Demo"],
+            Source = BepInExReleaseSource.BelmontsCurse,
             BadgeText = "BE 785",
             InstallHint = "Uses BepInEx 6.0.0-be.785 from builds.bepinex.dev, not stock GitHub pre.2."
         },
