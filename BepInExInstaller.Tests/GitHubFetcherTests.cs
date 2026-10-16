@@ -151,6 +151,7 @@ public sealed class GitHubFetcherTests
             source.DirectDownloadUrl);
         Assert.True(GitHubFetcher.IsTrustedDownloadUrl(source.DirectDownloadUrl!));
         Assert.Equal("builds.bepinex.dev 6.0.0-be.785+6abdba4", source.Label);
+        Assert.Equal(source, BepInExReleaseSource.BelmontsCurse);
     }
 
     [Fact]

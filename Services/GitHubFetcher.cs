@@ -13,8 +13,8 @@ public enum BepInExAssetStyle
 /// <summary>
 /// Zip to pull for a known game. Most games use a GitHub release
 /// (<see cref="Owner"/>/<see cref="Repo"/>@<see cref="Tag"/>). Garden of Witches,
-/// The Rogue Prince of Persia, and Tainted Grail: The Fall of Avalon use a pinned
-/// BepInBuilds artifact via <see cref="DirectDownloadUrl"/>.
+/// Castlevania: Belmont's Curse, The Rogue Prince of Persia, and Tainted Grail:
+/// The Fall of Avalon use a pinned BepInBuilds artifact via <see cref="DirectDownloadUrl"/>.
 /// </summary>
 public sealed record BepInExReleaseSource(
     string Owner,
@@ -31,12 +31,15 @@ public sealed record BepInExReleaseSource(
 
     // Stock GitHub pre.2 dies with "We support 23-29, got 31". BE 785 reads
     // metadata v31 and was verified against Garden of Witches (Unity 2022.3.62f3).
+    // Castlevania: Belmont's Curse is the same line (Unity 2022.3.62f2 / metadata v31).
     public static BepInExReleaseSource GardenOfWitches { get; } = new(
         "BepInEx",
         "BepInEx",
         "6.0.0-be.785+6abdba4",
         BepInExAssetStyle.Official,
         "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip");
+
+    public static BepInExReleaseSource BelmontsCurse => GardenOfWitches;
 
     // Same metadata-v31 failure as Garden of Witches, on Unity 6.
     // BE 788 keeps the Cpp2IL from 785 (development.1452) and adds the Unity 6
